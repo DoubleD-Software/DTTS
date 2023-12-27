@@ -8,4 +8,7 @@
 #define OLED_WIDTH 128
 #define OLED_HEIGHT 32
 
+#define NUM_DISP_CLK 25
+#define NUM_DISP_DIO 26
+
 #endif
