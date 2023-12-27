@@ -1,3 +1,3 @@
 # DTTS-core
 
-The DTTS firmware for the ESP32.
+The code for the open-source time tracking device DTTS, built for the ESP32.
