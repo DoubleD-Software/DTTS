@@ -1,6 +1,8 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
+#define VERSION "0.1.0"
+
 #define OLED_SDA 33
 #define OLED_SCL 32
 #define OLED_WIDTH 128

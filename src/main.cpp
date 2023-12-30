@@ -19,7 +19,9 @@ void setup() {
     num_disp.begin();
 
     oled.clear();
-    oled.print("DTTS");
+    oled.print("DTTS\n", 2);
+    oled.print("DoubleD Software\n", 1);
+    oled.print(VERSION, 1);
     num_disp.displayNumBuffer((uint8_t *) "\1\2\3\4\5\6");
 
     DEBUG_SER_PRINTLN("Initialized DTTS.");

@@ -27,10 +27,13 @@ void OLED::clear(int color, int cursor_x, int cursor_y) {
     display->setTextColor(color);
 }
 
-void OLED::print(const char *str, int color, int cursor_x, int cursor_y, int text_size) {
-    display->setCursor(cursor_x, cursor_y);
+void OLED::print(const char *str, int text_size, int color) {
     display->setTextColor(color);
     display->setTextSize(text_size);
-    display->println(str);
+    display->print(str);
     display->display();
+}
+
+void OLED::setCursor(int cursor_x, int cursor_y) {
+    display->setCursor(cursor_x, cursor_y);
 }

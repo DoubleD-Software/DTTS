@@ -12,7 +12,8 @@ class OLED {
         OLED(int pin_sda, int pin_scl, int width, int height);
         void begin();
         void clear(int color = WHITE, int cursor_x = 0, int cursor_y = 0);
-        void print(const char *str, int color = WHITE, int cursor_x = 0, int cursor_y = 0, int text_size = 2);
+        void print(const char *str, int text_size, int color = WHITE);
+        void setCursor(int cursor_x, int cursor_y);
 
     private:
         int pin_sda;
