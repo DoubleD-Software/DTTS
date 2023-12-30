@@ -40,7 +40,6 @@ class TM1637 {
         void writeSync(int pin, int value);
         void start();
         void stop();
-        void nanoDelay(uint16_t n);
         
         int clk_pin;
         int dio_pin;
