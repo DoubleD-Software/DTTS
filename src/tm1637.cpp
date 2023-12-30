@@ -130,8 +130,7 @@ uint8_t TM1637::writeByte(uint8_t data) {
 
 void TM1637::writeSync(int pin, int value) {
     digitalWrite(pin, value);
-    int i = 21;
-    while (i--);
+    nanoDelay(21);
 }
 
 void TM1637::start() {
@@ -146,4 +145,10 @@ void TM1637::stop() {
     writeSync(dio_pin, LOW);
     writeSync(clk_pin, HIGH);
     writeSync(dio_pin, HIGH);
+}
+
+void TM1637::nanoDelay(uint16_t n)
+{
+  volatile uint16_t i = n;
+  while (i--);
 }
