@@ -9,7 +9,7 @@ Please note we have a code of conduct, please follow it in all your interactions
 
 1. Clone the project and open it in your desired IDE.
 2. Make your changes. Please follow our style guide.
-3. Bump the version in `include/definitions.h`
+3. Bump the version in `include/definitions.h`.
 4. Commit your changes with a descriptive message to a separate branch. Name it appropriately.
 5. Build the project and test your changes (if possible).
 6. Create a pull using our template.
