@@ -73,6 +73,7 @@ void TM1637::displayNumBuffer(uint8_t *buffer) {
         digit_buffer[i] = dec_mapping[0x7F & buffer[i]];
         digit_buffer[i] |= buffer[i] & DISPLAY_DOT;
     }
+    display();
 }
 
 void TM1637::displayString(const char *str) {
@@ -84,6 +85,7 @@ void TM1637::displayString(const char *str) {
         digit_buffer[i] = ascii_mapping[(0x7F & str[i]) - 0x20];
         digit_buffer[i] |= str[i] & DISPLAY_DOT;
     }
+    display();
 }
 
 void TM1637::display() {
@@ -105,8 +107,7 @@ void TM1637::display() {
 }
 
 uint8_t TM1637::writeByte(uint8_t data) {
-    for (uint8_t i = 8; i > 0; i--)
-    {
+    for (uint8_t i = 8; i > 0; i--) {
         writeSync(clk_pin, LOW);
         writeSync(dio_pin, data & 0x01);
         writeSync(clk_pin, HIGH);
