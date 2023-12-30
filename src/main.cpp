@@ -22,11 +22,11 @@ void setup() {
     oled.print("DTTS\n", 2);
     oled.print("DoubleD Software\n", 1);
     oled.print(VERSION, 1);
-    num_disp.displayNumBuffer((uint8_t *) "\1\2\3\4\5\6");
+    num_disp.displayString("ddsoft,");
 
     DEBUG_SER_PRINTLN("Initialized DTTS.");
 }
 
 void loop() {
-  
+
 }

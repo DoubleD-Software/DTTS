@@ -1,11 +1,20 @@
 #include <tm1637.h>
 
+/**
+ * Create a new TM1637 module instance.
+ * @param clk_pin The CLK pin the module is connected to.
+ * @param dio_pin The DIO pin the module is connected to.
+ * @param digits The amount of digits the module has (usually 4 or 6).
+ */
 TM1637::TM1637(int clk_pin, int dio_pin, int digits) {
     this->clk_pin = clk_pin;
     this->dio_pin = dio_pin;
     this->digits = digits;
 }
 
+/**
+ * Initialize the TM1637 module and required variables.
+ */
 void TM1637::begin() {
     DEBUG_SER_PRINTLN("Initializing TM1637 module...");
     digit_order = new uint8_t[digits];
@@ -25,24 +34,25 @@ void TM1637::begin() {
     dec_mapping[8] = 0x7F;
     dec_mapping[9] = 0x6F;
 
+    // ASCII to 7-segment mapping
     uint8_t tmp[] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Control characters
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        
-        0x00, 0x86, 0x22, 0x7f, 0x6d, 0x52, 0x7d, 0x02, //   !"# $%&'
-        0x39, 0x0f, 0x7f, 0x46, 0x80, 0x40, 0x80, 0x52, //  ()*+ ,-./
-        0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, //  0123 4567
-        0x7f, 0x6f, 0x09, 0x89, 0x58, 0x48, 0x4c, 0xD3, //  89:; <=>?
-        0x77, 0x5f, 0x7c, 0x39, 0x5E, 0x79, 0x71, 0x3d, //  @ABC DEFG
-        0x74, 0x06, 0x0E, 0x75, 0x38, 0x37, 0x54, 0x5c, //  HIJK LMNO
-        0x73, 0x67, 0x50, 0x6D, 0x78, 0x3E, 0x1C, 0x9c, //  PQRS TUVW
+
+        0x00, 0x86, 0x22, 0x7F, 0x6D, 0x52, 0x7D, 0x02, //   !"# $%&'
+        0x39, 0x0F, 0x7F, 0x46, 0x80, 0x40, 0x80, 0x52, //  ()*+ ,-./
+        0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, //  0123 4567
+        0x7F, 0x6F, 0x09, 0x89, 0x58, 0x48, 0x4C, 0xD3, //  89:; <=>?
+        0x77, 0x5F, 0x7C, 0x39, 0x5E, 0x79, 0x71, 0x3D, //  @ABC DEFG
+        0x74, 0x06, 0x0E, 0x75, 0x38, 0x37, 0x54, 0x5C, //  HIJK LMNO
+        0x73, 0x67, 0x50, 0x6D, 0x78, 0x3E, 0x1C, 0x9C, //  PQRS TUVW
         0x76, 0x6E, 0x5B, 0x39, 0x52, 0x0F, 0x23, 0x08, //  XYZ[ /]^_
-        0x02, 0x5f, 0x7c, 0x39, 0x5E, 0x79, 0x71, 0x3d, //  `abc defg
-        0x74, 0x06, 0x0E, 0x75, 0x38, 0x37, 0x54, 0x5c, //  hijk lmno
-        0x73, 0x67, 0x50, 0x6D, 0x78, 0x3E, 0x1C, 0x9c, //  pqrs tuvw
-        0x76, 0x6E, 0x5B, 0x39, 0x30, 0x0F, 0x40, 0x00, //  xyz{ |}~ 
+        0x02, 0x5F, 0x7C, 0x58, 0x5E, 0x79, 0x71, 0x3D, //  `abc defg
+        0x74, 0x06, 0x0E, 0x75, 0x38, 0x37, 0x54, 0x5C, //  hijk lmno
+        0x73, 0x67, 0x50, 0x6D, 0x78, 0x3E, 0x1C, 0x9C, //  pqrs tuvw
+        0x76, 0x6E, 0x5B, 0x39, 0x30, 0x0F, 0x40, 0x00, //  xyz{ |}~
 
         // Extended character set is filled with zeros
     };
@@ -71,36 +81,62 @@ void TM1637::begin() {
     DEBUG_SER_PRINTLN("TM1637 module initialized.");
 }
 
+/**
+ * Set the brightness of the display.
+ * @param brightness The brightness to set.
+ */
 void TM1637::setBrightness(int brightness) {
     this->brightness = brightness;
 }
 
+/**
+ * Display a raw buffer on the display.
+ * @param buffer The buffer to display.
+ */
 void TM1637::displayRawBuffer(uint8_t *buffer) {
     memcpy(digit_buffer, buffer, digits);
     display();
 }
 
+/**
+ * Display a number buffer on the display.
+ * @param buffer The buffer to display.
+ */
 void TM1637::displayNumBuffer(uint8_t *buffer) {
     for (int i = 0; i < digits; i++) {
-        digit_buffer[i] = dec_mapping[0x7F & buffer[i]];
+        digit_buffer[i] = dec_mapping[0x7F & buffer[i]]; // Map the number to the 7 segments
         digit_buffer[i] |= buffer[i] & DISPLAY_DOT;
     }
     display();
 }
 
+/**
+ * Display a string on the display. Inline dots are added by using a comma (,), while standalone
+ * dots are added by using a period (.).
+ * @param str The string to display.
+ */
 void TM1637::displayString(const char *str) {
-    uint8_t tmp_buf[digits] = {0};
-    for (int i = 0; str[i] != 0; i++) {
-        tmp_buf[i] = str[i];
-    }
-
-    for (int i = 0; i < digits; i++) {
-        digit_buffer[i] = ascii_mapping[(0x7F & tmp_buf[i])];
-        digit_buffer[i] |= tmp_buf[i] & DISPLAY_DOT;
+    memset(digit_buffer, 0, digits);
+    int digit = -1; // The current digit (not the current character, since a comma can be used to add a dot, which isn't its own digit)
+    for (int i = 0; str[i] != 0 && digit <= digits; i++) {
+        if ((uint8_t) str[i] == 0x2C) { // Check if the character is a comma
+            if (digit != -1 && digit < digits) { // Don't add the dot while the digit is -1 (no digit has been set yet) or when the maximum amount of digits has been reached
+                digit_buffer[digit] |= DISPLAY_DOT;
+            }
+            continue;
+        }
+        digit++; // Increase the amount of digits and stop if the maximum amount of digits has been reached
+        if (digit < digits) { // Don't add the character while the maximum amount of digits has been reached
+            digit_buffer[digit] = ascii_mapping[(0x7F & str[i])]; // Map the character to the 7 segments
+            digit_buffer[digit] |= str[i] & DISPLAY_DOT;
+        }
     }
     display();
 }
 
+/**
+ * Display the display buffer on the display.
+ */
 void TM1637::display() {
     start();
     writeByte(TM1637_ADDR_AUTO);
@@ -119,6 +155,11 @@ void TM1637::display() {
     stop();
 }
 
+/**
+ * Write a byte to the module and read a byte back.
+ * @param data The byte to write.
+ * @return The byte read back.
+ */
 uint8_t TM1637::writeByte(uint8_t data) {
     for (uint8_t i = 8; i > 0; i--) {
         writeSync(clk_pin, LOW);
@@ -141,12 +182,20 @@ uint8_t TM1637::writeByte(uint8_t data) {
     return rv;
 }
 
+/**
+ * Write a value to a pin and wait a specific amount of clock cycles.
+ * @param pin The pin to write to.
+ * @param value The value to write.
+ */
 void TM1637::writeSync(int pin, int value) {
     digitalWrite(pin, value);
     volatile uint16_t i = 25;
     while (i--);
 }
 
+/**
+ * Start the transmission to the module module.
+ */
 void TM1637::start() {
     writeSync(clk_pin, HIGH);
     writeSync(dio_pin, HIGH);
@@ -154,6 +203,9 @@ void TM1637::start() {
     writeSync(clk_pin, LOW);
 }
 
+/**
+ * Stop the transmission to the module.
+ */
 void TM1637::stop() {
     writeSync(clk_pin, LOW);
     writeSync(dio_pin, LOW);
