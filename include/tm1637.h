@@ -30,9 +30,9 @@ class TM1637 {
         TM1637(int clk_pin, int dio_pin, int digits = 6);
         void begin();
         void setBrightness(int brightness);
-        void display_raw_buffer(uint8_t *buffer);
-        void display_num_buffer(uint8_t *buffer);
-        void display_string(const char *str);
+        void displayRawBuffer(uint8_t *buffer);
+        void displayNumBuffer(uint8_t *buffer);
+        void displayString(const char *str);
 
     private:
         void display();

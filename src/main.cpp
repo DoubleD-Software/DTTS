@@ -20,7 +20,7 @@ void setup() {
 
     oled.clear();
     oled.print("DTTS");
-    num_disp.display_num_buffer((uint8_t*) "\1\2\3\4\5\6");
+    num_disp.displayNumBuffer((uint8_t *) "\1\2\3\4\5\6");
 
     DEBUG_SER_PRINTLN("Initialized DTTS.");
 }

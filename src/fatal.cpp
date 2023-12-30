@@ -1,11 +1,11 @@
 #include <fatal.h>
 
-void sys_halt() {
+void sysHalt() {
     DEBUG_SER_PRINTLN("\nA fatal error has occurred and the system cannot continue. System halted.");
     while(1);
 }
 
-void sys_reset() {
+void sysReset() {
     DEBUG_SER_PRINTLN("\nA fatal error has occurred and the system cannot continue. Restarting...");
     ESP.restart();
 }

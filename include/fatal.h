@@ -3,7 +3,7 @@
 
 #include <debug.h>
 
-void sys_halt();
-void sys_reset();
+void sysHalt();
+void sysReset();
 
 #endif

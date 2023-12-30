@@ -15,7 +15,7 @@ void OLED::begin() {
 
     if(!display->begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
         DEBUG_SER_PRINTLN(F("SSD1306 allocation failed"));
-        sys_halt();
+        sysHalt();
     }
     DEBUG_SER_PRINTLN("OLED module initialized.");
 }

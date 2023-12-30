@@ -63,19 +63,19 @@ void TM1637::setBrightness(int brightness) {
     this->brightness = brightness;
 }
 
-void TM1637::display_raw_buffer(uint8_t *buffer) {
+void TM1637::displayRawBuffer(uint8_t *buffer) {
     memcpy(digit_buffer, buffer, digits);
     display();
 }
 
-void TM1637::display_num_buffer(uint8_t *buffer) {
+void TM1637::displayNumBuffer(uint8_t *buffer) {
     for (int i = 0; i < digits; i++) {
         digit_buffer[i] = dec_mapping[0x7F & buffer[i]];
         digit_buffer[i] |= buffer[i] & DISPLAY_DOT;
     }
 }
 
-void TM1637::display_string(const char *str) {
+void TM1637::displayString(const char *str) {
     for (int i = 0; i < digits; i++) {
         if (((0x7F & str[i]) - 0x20) < 0 || ((0x7F & str[i]) - 0x20) > 63) {
             digit_buffer[i] = str[i] & DISPLAY_DOT;
@@ -104,8 +104,7 @@ void TM1637::display() {
     stop();
 }
 
-uint8_t TM1637::writeByte(uint8_t data)
-{
+uint8_t TM1637::writeByte(uint8_t data) {
     for (uint8_t i = 8; i > 0; i--)
     {
         writeSync(clk_pin, LOW);
@@ -134,16 +133,14 @@ void TM1637::writeSync(int pin, int value) {
     while (i--);
 }
 
-void TM1637::start()
-{
+void TM1637::start() {
     writeSync(clk_pin, HIGH);
     writeSync(dio_pin, HIGH);
     writeSync(dio_pin, LOW);
     writeSync(clk_pin, LOW);
 }
 
-void TM1637::stop()
-{
+void TM1637::stop() {
     writeSync(clk_pin, LOW);
     writeSync(dio_pin, LOW);
     writeSync(clk_pin, HIGH);

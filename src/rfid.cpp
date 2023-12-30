@@ -17,14 +17,14 @@ void RFID::begin() {
     memcpy(cmd_read_multi, read_multi, 10);
     memcpy(cmd_stop_multi, stop_multi, 7);
 
-    stop_read_multi();
+    stopReadMulti();
     DEBUG_SER_PRINTLN("RFID module initialized.");
 }
 
-void RFID::start_read_multi() {
+void RFID::startReadMulti() {
     Serial1.write(cmd_read_multi, 10);
 }
 
-void RFID::stop_read_multi() {
+void RFID::stopReadMulti() {
     Serial1.write(cmd_stop_multi, 7);
 }

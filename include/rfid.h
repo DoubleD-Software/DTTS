@@ -10,8 +10,8 @@ class RFID {
     public:
         RFID();
         void begin();
-        void start_read_multi();
-        void stop_read_multi();
+        void startReadMulti();
+        void stopReadMulti();
     
     private:
         uint8_t *cmd_read_multi;
