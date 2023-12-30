@@ -147,8 +147,7 @@ void TM1637::stop() {
     writeSync(dio_pin, HIGH);
 }
 
-void TM1637::nanoDelay(uint16_t n)
-{
+void TM1637::nanoDelay(uint16_t n) {
   volatile uint16_t i = n;
   while (i--);
 }
