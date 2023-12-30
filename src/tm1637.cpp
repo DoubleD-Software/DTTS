@@ -77,13 +77,18 @@ void TM1637::displayNumBuffer(uint8_t *buffer) {
 }
 
 void TM1637::displayString(const char *str) {
+    uint8_t tmp_buf[digits] = {0};
+    for (int i = 0; str[i] != 0; i++) {
+        tmp_buf[i] = str[i];
+    }
+
     for (int i = 0; i < digits; i++) {
-        if (((0x7F & str[i]) - 0x20) < 0 || ((0x7F & str[i]) - 0x20) > 63) {
-            digit_buffer[i] = str[i] & DISPLAY_DOT;
+        if (((0x7F & tmp_buf[i]) - 0x20) < 0 || ((0x7F & tmp_buf[i]) - 0x20) > 63) {
+            digit_buffer[i] = tmp_buf[i] & DISPLAY_DOT;
             continue;
         }
-        digit_buffer[i] = ascii_mapping[(0x7F & str[i]) - 0x20];
-        digit_buffer[i] |= str[i] & DISPLAY_DOT;
+        digit_buffer[i] = ascii_mapping[(0x7F & tmp_buf[i]) - 0x20];
+        digit_buffer[i] |= tmp_buf[i] & DISPLAY_DOT;
     }
     display();
 }
