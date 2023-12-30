@@ -158,27 +158,27 @@ void TM1637::display() {
 /**
  * Write a byte to the module and read a byte back.
  * @param data The byte to write.
- * @return The byte read back.
+ * @return The ACK or NAK bit.
  */
 uint8_t TM1637::writeByte(uint8_t data) {
-    for (uint8_t i = 8; i > 0; i--) {
-        writeSync(clk_pin, LOW);
-        writeSync(dio_pin, data & 0x01);
-        writeSync(clk_pin, HIGH);
-        data >>= 1;
+    for (uint8_t i = 8; i > 0; i--) { // Shift out the bits of the byte; LSB first
+        writeSync(clk_pin, LOW); // Pull the CLK pin low in order to signal the module that a bit is being sent
+        writeSync(dio_pin, data & 0x01); // Write the bit to the DIO pin
+        writeSync(clk_pin, HIGH); // Set the CLK pin high again in order to signal the module that the bit has been sent
+        data >>= 1; // Shift the next bit into the LSB position
     }
 
-    writeSync(clk_pin, LOW);
+    writeSync(clk_pin, LOW); // Send a high bit to the module in order to signal that the transmission is over
     writeSync(dio_pin, HIGH);
     writeSync(clk_pin, HIGH);
 
-    pinMode(dio_pin, INPUT);
-    delayMicroseconds(10);
-    uint8_t rv = digitalRead(dio_pin);
+    pinMode(dio_pin, INPUT); // Change the DIO pin to an input in order to read the ACK bit
+    delayMicroseconds(10); // Wait for the module to pull the DIO pin low in order to signal that the transmission was successful
+    uint8_t rv = digitalRead(dio_pin); // Read the response bit
 
-    pinMode(dio_pin, OUTPUT);
-    digitalWrite(dio_pin, LOW);
-    delayMicroseconds(10);
+    pinMode(dio_pin, OUTPUT); // Change the DIO pin back to an output
+    digitalWrite(dio_pin, LOW); // Pull the DIO pin low in order to signal the module that the ACK bit has been read
+    delayMicroseconds(10); // Wait in case the function is called again immediately
     return rv;
 }
 
@@ -189,12 +189,12 @@ uint8_t TM1637::writeByte(uint8_t data) {
  */
 void TM1637::writeSync(int pin, int value) {
     digitalWrite(pin, value);
-    volatile uint16_t i = 25;
-    while (i--);
+    volatile uint16_t i = 25; // Needs to be volatile, otherwise the compiler will optimize it away
+    while (i--); // Delay for a specific number of clock cycles
 }
 
 /**
- * Start the transmission to the module module.
+ * Start the transmission to the module according to the datasheet.
  */
 void TM1637::start() {
     writeSync(clk_pin, HIGH);
@@ -204,7 +204,7 @@ void TM1637::start() {
 }
 
 /**
- * Stop the transmission to the module.
+ * Stop the transmission to the module according to the datasheet.
  */
 void TM1637::stop() {
     writeSync(clk_pin, LOW);
