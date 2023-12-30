@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+#define DEBUG
+
 #ifdef DEBUG
     #define DEBUG_SER_INIT(baudrate) Serial.begin(baudrate)
     #define DEBUG_SER_PRINTLN(...) Serial.println(__VA_ARGS__)
