@@ -38,12 +38,12 @@ void TM1637::begin() {
     memcpy(ascii_mapping, tmp, 64);
 
     if (digits == 6) {
-        digit_order[0] = 3;
-        digit_order[1] = 4;
-        digit_order[2] = 5;
-        digit_order[3] = 0;
-        digit_order[4] = 1;
-        digit_order[5] = 2;
+        digit_order[0] = 2;
+        digit_order[1] = 1;
+        digit_order[2] = 0;
+        digit_order[3] = 5;
+        digit_order[4] = 4;
+        digit_order[5] = 3;
     } else {
         digit_order[0] = 3;
         digit_order[1] = 2;
