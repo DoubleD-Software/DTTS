@@ -95,7 +95,7 @@ void TM1637::displayString(const char *str) {
     }
 
     for (int i = 0; i < digits; i++) {
-        digit_buffer[i] = ascii_mapping[(0x7F & tmp_buf[i]) - 0x20];
+        digit_buffer[i] = ascii_mapping[(0x7F & tmp_buf[i])];
         digit_buffer[i] |= tmp_buf[i] & DISPLAY_DOT;
     }
     display();
