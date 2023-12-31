@@ -5,7 +5,11 @@
 #include <debug.h>
 
 #define RFID_BAUD 115200
-#define RESP_TIMEOUT 50
+
+#define START_BYTE 0x02
+#define COMMAND_BYTE 0x22
+#define EPC_START_OFFSET 9
+#define EPC_END_OFFSET 20
 
 typedef struct {
     uint8_t header = 0xAA;
@@ -16,17 +20,6 @@ typedef struct {
     uint8_t checksum = 0x28;
     uint8_t end = 0xDD;
 } rfid_cmd_stop_multi_t;
-
-typedef struct {
-    uint8_t header = 0xAA;
-    uint8_t type = 0x01;
-    uint8_t command = 0x02;
-    uint8_t pl_h = 0x00;
-    uint8_t pl_l = 0x00;
-    uint8_t param = 0x00;
-    uint8_t checksum = 0x00;
-    uint8_t end = 0xDD;
-} rfid_resp_stop_multi_t;
 
 typedef struct {
     uint8_t header = 0xAA;

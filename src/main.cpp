@@ -36,6 +36,9 @@ void setup() {
     rfid.startReadMulti(rfidCallback);
 
     DEBUG_SER_PRINTLN("Initialized DTTS.");
+
+    delay(5000);
+    rfid.stopReadMulti();
 }
 
 void loop() {
