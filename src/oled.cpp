@@ -26,8 +26,8 @@ void OLED::begin() {
     display = new Adafruit_SSD1306(width, height, disp_wire, -1); // Allocate memory for the display object of type Adafruit_SSD1306.
 
     if(!display->begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Initialize the display object with the given parameters.
-        DEBUG_SER_PRINTLN(F("SSD1306 allocation failed"));
-        sysHalt();
+        DEBUG_SER_PRINTLN("SSD1306 allocation failed");
+        sysHalt(1, "OLED init failed.");
     }
     DEBUG_SER_PRINTLN("OLED module initialized.");
 }
