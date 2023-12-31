@@ -3,7 +3,6 @@
 
 #include <debug.h>
 
-void sysHalt();
-void sysReset();
+void sysHalt(int error_code, const char *msg);
 
 #endif
