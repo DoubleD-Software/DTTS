@@ -41,22 +41,6 @@ typedef struct {
     uint8_t end = 0xDD;
 } rfid_cmd_start_multi_t;
 
-typedef struct {
-    uint8_t header = 0xAA;
-    uint8_t type = 0x02;
-    uint8_t command = 0x22;
-    uint8_t pl_h = 0x00;
-    uint8_t pl_l = 0x11;
-    uint8_t rssi = 0x00;
-    uint8_t pc_h;
-    uint8_t pc_l;
-    uint8_t epc[12];
-    uint8_t crc_h;
-    uint8_t crc_l;
-    uint8_t checksum = 0x00;
-    uint8_t end = 0xDD;
-} rfid_tag_resp_t;
-
 class RFID {
     public:
         RFID();

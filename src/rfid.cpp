@@ -70,28 +70,42 @@ void RFID::stopReadMulti() {
 void rfidPollingTask(void *pv_parameters) {
     void (*callback_function)(uint8_t*) = (void (*)(uint8_t*)) pv_parameters; // Cast the void pointer to a function pointer.
 
+    uint8_t partial_state = 0;
+    uint8_t code_state = 0;
+    uint8_t data_add = 0;
+    bool detected = false;
+    uint8_t epc[12];
+
     while(1) {
-        rfid_tag_resp_t response;
+        if (Serial2.available() > 0) {
+        uint8_t data = Serial2.read();
 
-        while(!Serial2.available()); // Wait for the RFID module to respond.
-
-        bool response_success = true;
-        for (int i = 0; 1; i++) {
-            if (i >= sizeof(response)) { // Prevent buffer overflow.
-                response_success = false;
-                DEBUG_SER_PRINTLN("RFID module responded with an invalid response to start multi read command.");
-                break;
+        // Command code validation
+        // Proof of concept code from Chinese man
+        if ((data == 0x02) && (partial_state == 0)) {
+            partial_state = 1;
+        } else if ((partial_state == 1) && (data == 0x22) && (code_state == 0)) {
+            code_state = 1;
+            data_add = 3;
+        } else if (code_state == 1) {
+            data_add++;
+            if ((data_add >= 9) && (data_add <= 20)) { // Bytes 9 - 21 in response are the EPC code.
+                detected = true;
+                epc[data_add - 9] = data;
+            } else if (data_add >= 21) { // Done reading EPC code, we dont care about the rest of the response.
+                data_add = 0;
+                partial_state = 0;
+                code_state = 0;
+                if (detected) { // Call the callback function if a tag was detected.
+                    detected = false;
+                    callback_function(epc); // Call the callback function with the EPC code as input parameter.
+                }
             }
-            if (Serial2.available()) { // Read the response byte by byte until there is no more data available.
-                ((uint8_t*)&response)[i] = Serial2.read();
-            } else {
-                break;
-            }
+        } else {
+            data_add = 0;
+            partial_state = 0;
+            code_state = 0;
         }
-        if (response.header != 0xAA || response.type != 0x02 || response.command != 0x22) { // Check if the response is a label response.
-            response_success = false;
-        }
-
-        if (response_success) callback_function(response.epc); // Call the callback function with the EPC of the tag.
+    }
     }
 }
