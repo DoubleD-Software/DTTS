@@ -5,6 +5,7 @@
 #include <rfid.h>
 #include <oled.h>
 #include <tm1637.h>
+#include <main.h>
 
 RFID rfid;
 OLED oled(OLED_SDA, OLED_SCL, OLED_WIDTH, OLED_HEIGHT);
@@ -23,8 +24,8 @@ void setup() {
     DEBUG_SER_INIT(115200);
     DEBUG_SER_PRINTLN("Initializing DTTS...");
 
-    rfid.begin();
     oled.begin();
+    rfid.begin();
     num_disp.begin();
 
     oled.clear();
