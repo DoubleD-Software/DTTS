@@ -17,9 +17,9 @@ void RFID::begin() {
 
 /**
  * Start the RFID module in multi read mode.
- * @param callbackFunction The function to call when a tag is read. The function has to take a uint8_t pointer as input parameter.
+ * @param callback_function The function to call when a tag is read. The function has to take a uint8_t pointer as input parameter.
 */
-void RFID::startReadMulti(void (*callbackFunction)(uint8_t*)) {
+void RFID::startReadMulti(void (*callback_function)(uint8_t*)) {
     rfid_cmd_start_multi_t command;
     Serial2.write((uint8_t*)&command, sizeof(command));
 
@@ -29,7 +29,7 @@ void RFID::startReadMulti(void (*callbackFunction)(uint8_t*)) {
         rfidPollingTask, // Function to run on the task
         "RFID Polling", // Task name
         16384, // Stack size in words (twice the amount of bytes)
-        (void*) callbackFunction, // Task input parameter (callback function)
+        (void*) callback_function, // Task input parameter (callback function)
         0, // Priority of the task
         &polling_task_handle, // Task handle
         cpu_core_task // CPU core to run the task on
@@ -65,10 +65,10 @@ void RFID::stopReadMulti() {
 
 /**
  * The task that polls the RFID module for tags.
- * @param pvParameters The callback function to call when a tag is read in the form of a void pointer to comply with the task creation API.
+ * @param pv_parameters The callback function to call when a tag is read in the form of a void pointer to comply with the task creation API.
 */
-void rfidPollingTask(void *pvParameters) {
-    void (*callbackFunction)(uint8_t*) = (void (*)(uint8_t*)) pvParameters; // Cast the void pointer to a function pointer.
+void rfidPollingTask(void *pv_parameters) {
+    void (*callback_function)(uint8_t*) = (void (*)(uint8_t*)) pv_parameters; // Cast the void pointer to a function pointer.
 
     while(1) {
         rfid_tag_resp_t response;
@@ -79,8 +79,8 @@ void rfidPollingTask(void *pvParameters) {
         for (int i = 0; 1; i++) {
             if (i >= sizeof(response)) { // Prevent buffer overflow.
                 response_success = false;
-                DEBUG_SER_PRINTLN("RFID module responded with an invalid response to start multi read command. Buffer overflow prevented.");
-                return;
+                DEBUG_SER_PRINTLN("RFID module responded with an invalid response to start multi read command.");
+                break;
             }
             if (Serial2.available()) { // Read the response byte by byte until there is no more data available.
                 ((uint8_t*)&response)[i] = Serial2.read();
@@ -88,11 +88,10 @@ void rfidPollingTask(void *pvParameters) {
                 break;
             }
         }
-        if(response.header != 0xAA || response.type != 0x02 || response.command != 0x22) { // Check if the response is a label response.
+        if (response.header != 0xAA || response.type != 0x02 || response.command != 0x22) { // Check if the response is a label response.
             response_success = false;
-            DEBUG_SER_PRINTLN("Non label response recieved. Callback will not be called.");
         }
 
-        if (response_success) callbackFunction(response.epc); // Call the callback function with the EPC of the tag.
+        if (response_success) callback_function(response.epc); // Call the callback function with the EPC of the tag.
     }
 }

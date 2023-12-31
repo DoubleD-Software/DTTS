@@ -61,13 +61,13 @@ class RFID {
     public:
         RFID();
         void begin();
-        void startReadMulti(void (*callbackFunction)(uint8_t*));
+        void startReadMulti(void (*callback_function)(uint8_t*));
         void stopReadMulti();
     
     private:
         TaskHandle_t polling_task_handle;
 };
 
-void rfidPollingTask(void *pvParameters);
+void rfidPollingTask(void *pv_parameters);
 
 #endif

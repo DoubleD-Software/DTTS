@@ -16,6 +16,7 @@ void rfidCallback(uint8_t* tag) {
         DEBUG_SER_PRINT(tag[i], HEX);
         DEBUG_SER_PRINT(" ");
     }
+    DEBUG_SER_PRINTLN();
 }
 
 void setup() {
