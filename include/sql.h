@@ -12,6 +12,8 @@ class SQL {
         void begin(const char *db_path);
         void openDB(const char *db_path);
         void closeDB();
+        int clearTable(const char *table_name);
+        int dropTable(const char *table_name);
 
     private:
         sqlite3 *db;
