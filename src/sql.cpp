@@ -154,7 +154,7 @@ int SQL::createTable(const char *table_name, sql_column_descriptor_t *columns, i
         }
     }
     strcat(sql, ")");
-    dbExec(sql);
+    return dbExec(sql);
 }
 
 /**
@@ -203,5 +203,5 @@ int SQL::insertIntoTable(const char *table_name, sql_column_t *columns, int colu
         }
     }
     strcat(sql, ")");
-    dbExec(sql);
+    return dbExec(sql);
 }
