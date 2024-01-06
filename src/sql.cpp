@@ -94,7 +94,7 @@ int SQL::dropTable(const char *table_name) {
  * @param sql The SQL statement to execute.
  * @return 0 on success, error code on failure.
 */
-int SQL::dbExec(const char *sql) {
+int SQL::dbExecSimple(const char *sql) {
     DEBUG_SER_PRINT("Executing statement: ");
     DEBUG_SER_PRINTLN(sql);
     char *err_msg = 0;
@@ -154,7 +154,7 @@ int SQL::createTable(const char *table_name, sql_column_descriptor_t *columns, i
         }
     }
     strcat(sql, ")");
-    return dbExec(sql);
+    return dbExecSimple(sql);
 }
 
 /**
@@ -203,5 +203,74 @@ int SQL::insertIntoTable(const char *table_name, sql_column_t *columns, int colu
         }
     }
     strcat(sql, ")");
-    return dbExec(sql);
+    return dbExecSimple(sql);
+}
+
+/**
+ * Get a value from the given table in the database. This function is currently vunerable to SQL injection. Has to be fixed in the future.
+ * @param table_name The name of the table to get the value from. Has to be maximum of 128 characters long.
+ * @param column A pointer to a sql_column_t struct, containing the column name and type.
+ * @param where A pointer to a sql_column_t struct, containing the column name, type and value to search for.
+ * @return void The value will be written to the column struct.
+*/
+void SQL::getValueFromTable(const char *table_name, sql_column_t *column, sql_column_t *where) {
+    int table_name_size = strlen(table_name);
+    if (table_name_size > 128) {
+        DEBUG_SER_PRINTLN("Invalid Table Name. Name too long.");
+        return;
+    }
+    char sql[15 + table_name_size + 1] = {0}; // 15 characters for "SELECT ", table_name_size characters for the table name and 1 character for the null terminator.
+    sprintf(sql, "SELECT %s FROM %s WHERE %s = ", column->name, table_name, where->name);
+    switch (where->type) {
+        case SQL_TYPE_INT: {
+            char value_int[11] = {0};
+            sprintf(value_int, "%d", where->value_int);
+            strcat(sql, value_int);
+            break;
+        }
+        case SQL_TYPE_VARCHAR: {
+            strcat(sql, "'");
+            strcat(sql, where->value_varchar);
+            strcat(sql, "'");
+            break;
+        }
+        default: {
+            DEBUG_SER_PRINTLN("Invalid column type.");
+            return;
+        }
+    }
+    strcat(sql, " LIMIT 1");
+    DEBUG_SER_PRINT("Executing statement: ");
+    DEBUG_SER_PRINTLN(sql);
+    sqlite3_stmt *stmt;
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+    if (rc != SQLITE_OK) {
+        DEBUG_SER_PRINTLN("Failed to prepare statement.");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(db));
+        return;
+    }
+    rc = sqlite3_step(stmt);
+    if (rc == SQLITE_ROW) {
+        switch (column->type) {
+            case SQL_TYPE_INT: {
+                column->value_int = sqlite3_column_int(stmt, 0);
+                break;
+            }
+            case SQL_TYPE_VARCHAR: {
+                int size = strlen((const char *)sqlite3_column_text(stmt, 0)) + 1;
+                column->value_varchar = (char *) malloc(size);
+                memcpy(column->value_varchar, sqlite3_column_text(stmt, 0), size);
+                break;
+            }
+            default: {
+                DEBUG_SER_PRINTLN("Invalid column type.");
+                return;
+            }
+        }
+    } else {
+        DEBUG_SER_PRINTLN("Failed to get value from table.");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(db));
+        return;
+    }
+    sqlite3_finalize(stmt);
 }
