@@ -78,7 +78,7 @@ void rfidPollingTask(void *pv_parameters) {
                 data_index = 3;
             } else if (command_state == 1) { // Check if the command state is 1 = command byte received.
                 data_index++;
-                if (data_index == 6) {
+                if (data_index == RSSI_START_OFFSET) {
                     rssi = data;
                 } else if ((data_index >= EPC_START_OFFSET) && (data_index <= EPC_END_OFFSET)) { // Read data and store it in the EPC array in case the data is part of the EPC.
                     epc[data_index - EPC_START_OFFSET] = data;
