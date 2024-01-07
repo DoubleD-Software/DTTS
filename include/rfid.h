@@ -10,6 +10,7 @@
 #define COMMAND_BYTE 0x22
 #define EPC_START_OFFSET 9
 #define EPC_END_OFFSET 20
+#define RSSI_START_OFFSET 6
 
 typedef struct {
     uint8_t header = 0xAA;
