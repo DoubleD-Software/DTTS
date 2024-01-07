@@ -83,7 +83,7 @@ void rfidPollingTask(void *pv_parameters) {
                 } else if ((data_index >= EPC_START_OFFSET) && (data_index <= EPC_END_OFFSET)) { // Read data and store it in the EPC array in case the data is part of the EPC.
                     epc[data_index - EPC_START_OFFSET] = data;
                 } else if (data_index > EPC_END_OFFSET) { // EPC read, call the callback function and reset the state variables.
-                    callback_function(epc, data);
+                    callback_function(epc, rssi);
                     current_state = 0;
                     command_state = 0;
                     data_index = 0;
