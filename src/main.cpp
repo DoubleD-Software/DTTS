@@ -11,13 +11,15 @@ RFID rfid;
 OLED oled(OLED_SDA, OLED_SCL, OLED_WIDTH, OLED_HEIGHT);
 TM1637 num_disp(NUM_DISP_CLK, NUM_DISP_DIO, 6);
 
-void rfidCallback(uint8_t* tag) {
+void rfidCallback(uint8_t* tag, uint8_t rssi) {
     DEBUG_SER_PRINT("Tag: ");
     for (int i = 0; i < 12; i++) {
         DEBUG_SER_PRINT(tag[i], HEX);
         DEBUG_SER_PRINT(" ");
     }
     DEBUG_SER_PRINTLN();
+    DEBUG_SER_PRINT("RSSI: ");
+    DEBUG_SER_PRINTLN(rssi);
 }
 
 void setup() {

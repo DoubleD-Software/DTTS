@@ -38,7 +38,7 @@ class RFID {
     public:
         RFID();
         void begin();
-        void startReadMulti(void (*callback_function)(uint8_t*));
+        void startReadMulti(void (*callback_function)(uint8_t*, uint8_t));
         void stopReadMulti();
     
     private:

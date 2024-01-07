@@ -16,9 +16,9 @@ void RFID::begin() {
 
 /**
  * Start the RFID module in multi read mode.
- * @param callback_function The function to call when a tag is read. The function has to take a uint8_t pointer as input parameter.
+ * @param callback_function The function to call when a tag is read. The function has to take a uint8_t pointer and a uint8_t as parameters for the tag and the RSSI respectively.
 */
-void RFID::startReadMulti(void (*callback_function)(uint8_t *)) {
+void RFID::startReadMulti(void (*callback_function)(uint8_t *, uint8_t)) {
     DEBUG_SER_PRINTLN("Starting RFID multi read...");
     rfid_cmd_start_multi_t command;
     Serial2.write((uint8_t *) &command, sizeof(command));
@@ -50,12 +50,13 @@ void RFID::stopReadMulti() {
  * @param pv_parameters The callback function to call when a tag is read in the form of a void pointer to comply with the task creation API.
 */
 void rfidPollingTask(void *pv_parameters) {
-    void (*callback_function)(uint8_t *) = (void (*)(uint8_t *)) pv_parameters; // Restore the callback function from the void pointer.
+    void (*callback_function)(uint8_t *, uint8_t) = (void (*)(uint8_t *, uint8_t)) pv_parameters; // Cast the void pointer to the callback function pointer.
 
     uint8_t current_state = 0;
     uint8_t command_state = 0;
     uint8_t data_index = 0;
     uint8_t epc[12]; // The EPC of the tag.
+    uint8_t rssi;
 
     uint32_t last_read = millis(); // The last time a tag was read.
 
@@ -77,10 +78,12 @@ void rfidPollingTask(void *pv_parameters) {
                 data_index = 3;
             } else if (command_state == 1) { // Check if the command state is 1 = command byte received.
                 data_index++;
-                if ((data_index >= EPC_START_OFFSET) && (data_index <= EPC_END_OFFSET)) { // Read data and store it in the EPC array in case the data is part of the EPC.
+                if (data_index == 6) {
+                    rssi = data;
+                } else if ((data_index >= EPC_START_OFFSET) && (data_index <= EPC_END_OFFSET)) { // Read data and store it in the EPC array in case the data is part of the EPC.
                     epc[data_index - EPC_START_OFFSET] = data;
                 } else if (data_index > EPC_END_OFFSET) { // EPC read, call the callback function and reset the state variables.
-                    callback_function(epc);
+                    callback_function(epc, data);
                     current_state = 0;
                     command_state = 0;
                     data_index = 0;
