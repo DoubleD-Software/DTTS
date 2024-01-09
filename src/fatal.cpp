@@ -8,10 +8,11 @@
  * @return This function never returns. A restart is required.
  */
 void sysHalt(int error_code, const char *msg) {
-    DEBUG_SER_PRINTLN("\nA fatal error has occurred and the system cannot continue. System halted.");
     char oled_str[64] = {0};
     sprintf(oled_str, "ERROR %d: %s\nPlease restart.", error_code, msg);
     oled.clear();
     oled.print(oled_str, 1, WHITE);
-    while(1);
+    DEBUG_SER_PRINTLN(oled_str);
+    DEBUG_SER_PRINTLN("\nA fatal error has occurred and the system cannot continue. System halted.");
+    while(1); // Replace with task stop and full halt
 }
