@@ -34,6 +34,7 @@ void RFID::startReadMulti(void (*callback_function)(uint8_t *, uint8_t)) {
             &polling_task_handle, // Task handle
             cpu_core_task // CPU core to run the task on
     );
+    DEBUG_SER_PRINTLN("RFID multi read started.");
 }
 
 /**
@@ -43,6 +44,7 @@ void RFID::stopReadMulti() {
     DEBUG_SER_PRINTLN("Stopping RFID multi read...");
     rfid_cmd_stop_multi_t command;
     Serial2.write((uint8_t *) &command, sizeof(command));
+    DEBUG_SER_PRINTLN("RFID multi read stopped.");
 }
 
 /**
@@ -95,4 +97,16 @@ void rfidPollingTask(void *pv_parameters) {
             }
         }
     }
+}
+
+/**
+ * Set the work area and frequency band of the RFID module. This function should be executed without any ongoing multi read.
+ * @param region The region to set the work area to. Use one of the RFID_REGION_* constants.
+*/
+void RFID::setWorkArea(uint8_t region) {
+    DEBUG_SER_PRINTLN("Setting RFID work area...");
+    rfid_cmd_set_work_area_t command;
+    command.region = region;
+    Serial2.write((uint8_t *) &command, sizeof(command));
+    DEBUG_SER_PRINTLN("RFID work area set.");
 }

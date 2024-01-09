@@ -28,6 +28,7 @@ void setup() {
 
     oled.begin();
     rfid.begin();
+    rfid.setWorkArea(RFID_REGION);
     num_disp.begin();
 
     oled.clear();

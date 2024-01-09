@@ -1,6 +1,8 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
+#include <rfid.h>
+
 #define VERSION "0.1.0"
 
 #define OLED_SDA 33
@@ -10,5 +12,7 @@
 
 #define NUM_DISP_CLK 25
 #define NUM_DISP_DIO 26
+
+#define RFID_REGION RFID_REGION_EU
 
 #endif
