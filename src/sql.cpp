@@ -24,7 +24,7 @@ void SQL::openDB(const char *db_path) {
     int rc = sqlite3_open(db_path, &db);
     if (rc) {
         DEBUG_SER_PRINTLN("Failed to open database");
-        sysHalt(1, "Database open failed.");
+        sysHalt(2, "Database open failed.");
     } else {
         DEBUG_SER_PRINTLN("Opened database successfully");
     }
@@ -273,4 +273,22 @@ void SQL::getValueFromTable(const char *table_name, sql_column_t *column, sql_co
         return;
     }
     sqlite3_finalize(stmt);
+}
+
+/**
+ * Create a database file on the SD card.
+ * @param db_path The path to the database file. If the file is on the sd card, the path has to start with "/sd".
+*/
+void SQL::createDatabase(const char *db_path) {
+    DEBUG_SER_PRINT("Creating SQL Database under path: ");
+    DEBUG_SER_PRINTLN(db_path);
+
+    File db_file = SD.open(db_path, FILE_WRITE, true);
+
+    if (!db_file) {
+        DEBUG_SER_PRINTLN("Failed to create SQL Database.");
+        sysHalt(3, "Database creation failed.");
+    } else {
+        DEBUG_SER_PRINTLN("Created SQL Database.");
+    }
 }
