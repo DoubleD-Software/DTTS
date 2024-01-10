@@ -50,7 +50,7 @@ int SQL::clearTable(const char *table_name) {
     }
     char sql[12 + table_name_size + 1] = {0}; // 12 characters for "DELETE FROM ", table_name_size characters for the table name and 1 character for the null terminator.
     sprintf(sql, "DELETE FROM %s", table_name);
-    dbExecSimple(sql);
+    return dbExecSimple(sql);
 }
 
 /**
