@@ -21,5 +21,6 @@ Please note we have a code of conduct, please follow it in all your interactions
 - Use `PascalCase` for classes.
 - Use `camelCase` for functions.
 - Use `UPPER_CASE` for constants and definitions.
-- The first curly bracket should be on the same line as the statement.
+- The first curly brace should be on the same line as the statement.
 - Versioning is based on [Semantic Versioning](https://semver.org/).
+- `UPPER_CASE.md` Should be used for Markdown files. 
