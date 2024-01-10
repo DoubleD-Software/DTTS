@@ -256,3 +256,84 @@ void SQL::getValueFromTable(const char *table_name, sql_column_t *column, sql_co
     }
     sqlite3_finalize(stmt);
 }
+
+/**
+ * Get multiple values from the given table in the database. This function is currently vunerable to SQL injection. Has to be fixed in the future.
+ * @param table_name The name of the table to get the value from. Has to be maximum of 128 characters long.
+ * @param columns An array of sql_column_t structs, containing the column names and types.
+ * @param column_count The number of columns in the table.
+ * @param where A pointer to a sql_column_t struct, containing the column name, type and value to search for.
+ * @return void The values will be written to the column structs.
+*/
+void SQL::getValuesFromTable(const char *table_name, sql_column_t *columns, int column_count, sql_column_t *where) {
+    int table_name_size = strlen(table_name);
+    if (table_name_size > 128) {
+        DEBUG_SER_PRINTLN("Invalid table name. Name too long.");
+        return;
+    }
+    String sql = "SELECT ";
+    for (int i = 0; i < column_count; i++) {
+        if (i != 0) {
+            sql += ", ";
+        }
+        sql += columns[i].name;
+    }
+    sql += " FROM ";
+    sql += table_name;
+    sql += " WHERE ";
+    sql += where->name;
+    sql += " = ";
+    
+    switch (where->type) {
+        case SQL_TYPE_INT: {
+            sql += String(where->value_int);
+            break;
+        }
+        case SQL_TYPE_VARCHAR: {
+            sql += "'";
+            sql += where->value_varchar;
+            sql += "'";
+            break;
+        }
+        default: {
+            DEBUG_SER_PRINTLN("Invalid column type.");
+            return;
+        }
+    }
+    sql += " LIMIT 1";
+    DEBUG_SER_PRINT("Executing statement: ");
+    DEBUG_SER_PRINTLN(sql);
+    sqlite3_stmt *stmt;
+    int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL);
+    if (rc != SQLITE_OK) {
+        DEBUG_SER_PRINTLN("Failed to prepare statement.");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(db));
+        return;
+    }
+    rc = sqlite3_step(stmt);
+    if (rc == SQLITE_ROW) {
+        for (int i = 0; i < column_count; i++) {
+            switch (columns[i].type) {
+                case SQL_TYPE_INT: {
+                    columns[i].value_int = sqlite3_column_int(stmt, i);
+                    break;
+                }
+                case SQL_TYPE_VARCHAR: {
+                    int size = strlen((const char *)sqlite3_column_text(stmt, i)) + 1;
+                    columns[i].value_varchar = (char *) malloc(size);
+                    memcpy(columns[i].value_varchar, sqlite3_column_text(stmt, i), size);
+                    break;
+                }
+                default: {
+                    DEBUG_SER_PRINTLN("Invalid column type.");
+                    return;
+                }
+            }
+        }
+    } else {
+        DEBUG_SER_PRINTLN("Failed to get value from table.");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(db));
+        return;
+    }
+    sqlite3_finalize(stmt);
+}

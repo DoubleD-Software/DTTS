@@ -36,6 +36,7 @@ class SQL {
         int createTable(const char *table_name, sql_column_descriptor_t *columns, int column_count);
         int insertIntoTable(const char *table_name, sql_column_t *columns, int column_count);
         void getValueFromTable(const char *table_name, sql_column_t *column, sql_column_t *where);
+        void getValuesFromTable(const char *table_name, sql_column_t *columns, int column_count, sql_column_t *where);
 
     private:
         int dbExecSimple(const char *sql);
