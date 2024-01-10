@@ -50,17 +50,7 @@ int SQL::clearTable(const char *table_name) {
     }
     char sql[12 + table_name_size + 1] = {0}; // 12 characters for "DELETE FROM ", table_name_size characters for the table name and 1 character for the null terminator.
     sprintf(sql, "DELETE FROM %s", table_name);
-    char *err_msg = 0;
-    int rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
-    if (rc) {
-        DEBUG_SER_PRINTLN("Failed to clear table.");
-        DEBUG_SER_PRINTLN(err_msg);
-        sqlite3_free(err_msg);
-        return rc;
-    } else {
-        DEBUG_SER_PRINTLN("Table cleared successfully.");
-        return rc;
-    }
+    dbExecSimple(sql);
 }
 
 /**
@@ -76,17 +66,7 @@ int SQL::dropTable(const char *table_name) {
     }
     char sql[10 + table_name_size + 1] = {0}; // 10 characters for "DROP TABLE ", table_name_size characters for the table name and 1 character for the null terminator.
     sprintf(sql, "DROP TABLE %s", table_name);
-    char *err_msg = 0;
-    int rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
-    if (rc) {
-        DEBUG_SER_PRINTLN("Failed to drop table.");
-        DEBUG_SER_PRINTLN(err_msg);
-        sqlite3_free(err_msg);
-        return rc;
-    } else {
-        DEBUG_SER_PRINTLN("Table dropped successfully.");
-        return rc;
-    }
+    return dbExecSimple(sql);
 }
 
 /**
@@ -100,12 +80,12 @@ int SQL::dbExecSimple(const char *sql) {
     char *err_msg = 0;
     int rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
     if (rc) {
-        DEBUG_SER_PRINTLN("Failed to insert into table.");
+        DEBUG_SER_PRINTLN("Failed to execute statement.");
         DEBUG_SER_PRINTLN(err_msg);
         sqlite3_free(err_msg);
         return rc;
     } else {
-        DEBUG_SER_PRINTLN("Inserted into table successfully.");
+        DEBUG_SER_PRINTLN("Executed statement successfully.");
         return rc;
     }
 }
@@ -123,24 +103,23 @@ int SQL::createTable(const char *table_name, sql_column_descriptor_t *columns, i
         DEBUG_SER_PRINTLN("Invalid Table Name. Name too long.");
         return 1;
     }
-    char sql[13 + table_name_size + 1] = {0}; // 13 characters for "CREATE TABLE ", table_name_size characters for the table name and 1 character for the null terminator.
-    sprintf(sql, "CREATE TABLE %s (", table_name);
+    String sql = "CREATE TABLE ";
+    sql += table_name;
+    sql += " (";
     for (int i = 0; i < column_count; i++) {
         if (i != 0) {
-            strcat(sql, ", ");
+            sql += ", ";
         }
-        strcat(sql, columns[i].name);
+        sql += columns[i].name;
         switch (columns[i].type) {
             case SQL_TYPE_INT: {
-                strcat(sql, " INT");
+                sql += " INT";
                 break;
             }
             case SQL_TYPE_VARCHAR: {
-                strcat(sql, " VARCHAR(");
-                char size[6] = {0};
-                sprintf(size, "%d", columns[i].size);
-                strcat(sql, size);
-                strcat(sql, ")");
+                sql += " VARCHAR(";
+                sql += String(columns[i].size);
+                sql += ")";
                 break;
             }
             default: {
@@ -149,12 +128,12 @@ int SQL::createTable(const char *table_name, sql_column_descriptor_t *columns, i
             }
         }
         if (columns[i].additional != NULL) {
-            strcat(sql, " ");
-            strcat(sql, columns[i].additional);
+            sql += " ";
+            sql += columns[i].additional;
         }
     }
-    strcat(sql, ")");
-    return dbExecSimple(sql);
+    sql += ")";
+    return dbExecSimple(sql.c_str());
 }
 
 /**
@@ -170,30 +149,28 @@ int SQL::insertIntoTable(const char *table_name, sql_column_t *columns, int colu
         DEBUG_SER_PRINTLN("Invalid Table Name. Name too long.");
         return 1;
     }
-    char sql[13 + table_name_size + 1] = {0}; // 13 characters for "INSERT INTO ", table_name_size characters for the table name and 1 character for the null terminator.
-    sprintf(sql, "INSERT INTO %s (", table_name);
+    String sql = "INSERT INTO ";
+    sql += table_name;
     for (int i = 0; i < column_count; i++) {
         if (i != 0) {
-            strcat(sql, ", ");
+            sql += ", ";
         }
-        strcat(sql, columns[i].name);
+        sql += columns[i].name;
     }
-    strcat(sql, ") VALUES (");
+    sql += " ) VALUES (";
     for (int i = 0; i < column_count; i++) {
         if (i != 0) {
-            strcat(sql, ", ");
+            sql += ", ";
         }
         switch (columns[i].type) {
             case SQL_TYPE_INT: {
-                char value_int[11] = {0};
-                sprintf(value_int, "%d", columns[i].value_int);
-                strcat(sql, value_int);
+                sql += String(columns[i].value_int);
                 break;
             }
             case SQL_TYPE_VARCHAR: {
-                strcat(sql, "'");
-                strcat(sql, columns[i].value_varchar);
-                strcat(sql, "'");
+                sql += "'";
+                sql += columns[i].value_varchar;
+                sql += "'";
                 break;
             }
             default: {
@@ -202,8 +179,8 @@ int SQL::insertIntoTable(const char *table_name, sql_column_t *columns, int colu
             }
         }
     }
-    strcat(sql, ")");
-    return dbExecSimple(sql);
+    sql += ")";
+    return dbExecSimple(sql.c_str());
 }
 
 /**
@@ -219,19 +196,23 @@ void SQL::getValueFromTable(const char *table_name, sql_column_t *column, sql_co
         DEBUG_SER_PRINTLN("Invalid Table Name. Name too long.");
         return;
     }
-    char sql[15 + table_name_size + 1] = {0}; // 15 characters for "SELECT ", table_name_size characters for the table name and 1 character for the null terminator.
-    sprintf(sql, "SELECT %s FROM %s WHERE %s = ", column->name, table_name, where->name);
+    String sql = "SELECT ";
+    sql += column->name;
+    sql += " FROM ";
+    sql += table_name;
+    sql += " WHERE ";
+    sql += where->name;
+    sql += " = ";
+    
     switch (where->type) {
         case SQL_TYPE_INT: {
-            char value_int[11] = {0};
-            sprintf(value_int, "%d", where->value_int);
-            strcat(sql, value_int);
+            sql += String(where->value_int);
             break;
         }
         case SQL_TYPE_VARCHAR: {
-            strcat(sql, "'");
-            strcat(sql, where->value_varchar);
-            strcat(sql, "'");
+            sql += "'";
+            sql += where->value_varchar;
+            sql += "'";
             break;
         }
         default: {
@@ -239,11 +220,11 @@ void SQL::getValueFromTable(const char *table_name, sql_column_t *column, sql_co
             return;
         }
     }
-    strcat(sql, " LIMIT 1");
+    sql += " LIMIT 1";
     DEBUG_SER_PRINT("Executing statement: ");
     DEBUG_SER_PRINTLN(sql);
     sqlite3_stmt *stmt;
-    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+    int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL);
     if (rc != SQLITE_OK) {
         DEBUG_SER_PRINTLN("Failed to prepare statement.");
         DEBUG_SER_PRINTLN(sqlite3_errmsg(db));
@@ -273,22 +254,4 @@ void SQL::getValueFromTable(const char *table_name, sql_column_t *column, sql_co
         return;
     }
     sqlite3_finalize(stmt);
-}
-
-/**
- * Create a database file on the SD card.
- * @param db_path The path to the database file. If the file is on the sd card, the path has to start with "/sd".
-*/
-void SQL::createDatabase(const char *db_path) {
-    DEBUG_SER_PRINT("Creating SQL Database under path: ");
-    DEBUG_SER_PRINTLN(db_path);
-
-    File db_file = SD.open(db_path, FILE_WRITE, true);
-
-    if (!db_file) {
-        DEBUG_SER_PRINTLN("Failed to create SQL Database.");
-        sysHalt(3, "Database creation failed.");
-    } else {
-        DEBUG_SER_PRINTLN("Created SQL Database.");
-    }
 }

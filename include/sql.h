@@ -6,6 +6,7 @@
 #include <fatal.h>
 #include <sqlite3.h>
 #include <SD.h>
+#include <string.h>
 
 #define SQL_TYPE_INT 0
 #define SQL_TYPE_VARCHAR 1
@@ -35,7 +36,6 @@ class SQL {
         int createTable(const char *table_name, sql_column_descriptor_t *columns, int column_count);
         int insertIntoTable(const char *table_name, sql_column_t *columns, int column_count);
         void getValueFromTable(const char *table_name, sql_column_t *column, sql_column_t *where);
-        void createDatabase(const char *db_path);
 
     private:
         int dbExecSimple(const char *sql);
