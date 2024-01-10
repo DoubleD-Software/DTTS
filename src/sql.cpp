@@ -231,23 +231,6 @@ void SQL::find(const char *table_name, sql_column_t *columns, int column_count, 
             }
         }
     }
-    
-    switch (where->type) {
-        case SQL_TYPE_INT: {
-            sql += String(where->value_int);
-            break;
-        }
-        case SQL_TYPE_VARCHAR: {
-            sql += "'";
-            sql += where->value_varchar;
-            sql += "'";
-            break;
-        }
-        default: {
-            DEBUG_SER_PRINTLN("Invalid column type.");
-            return;
-        }
-    }
     sql += " LIMIT 1";
     DEBUG_SER_PRINT("Executing statement: ");
     DEBUG_SER_PRINTLN(sql);

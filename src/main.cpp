@@ -62,16 +62,20 @@ void setup() {
     select[1].name = "name";
     select[1].type = SQL_TYPE_VARCHAR;
 
-    sql_column_t where;
-    where.name = "name";
-    where.type = SQL_TYPE_VARCHAR;
-    where.value_varchar = "Arnold Schwarzenegger";
+    sql_column_t where[2];
+    where[0].name = "id";
+    where[0].type = SQL_TYPE_INT;
+    where[0].value_int = 1;
+    where[1].name = "name";
+    where[1].type = SQL_TYPE_VARCHAR;
+    where[1].value_varchar = (char*) "Arnol Schwarzenegger";
+
 
     sql.begin("/sd/DTTS.db");
     sql.dropTable("teachers");
     sql.createTable("teachers", columns, 2);
     sql.insert("teachers", values, 2);
-    sql.find("teachers", select, 2, &where, 1);
+    sql.find("teachers", select, 2, where, 2);
 
     DEBUG_SER_PRINT("ID: ");
     DEBUG_SER_PRINTLN(select[0].value_int);
