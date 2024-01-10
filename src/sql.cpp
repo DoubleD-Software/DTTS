@@ -143,7 +143,7 @@ int SQL::createTable(const char *table_name, sql_column_descriptor_t *columns, i
  * @param column_count The number of columns in the table.
  * @return 0 on success, error code on failure.
 */
-int SQL::insertIntoTable(const char *table_name, sql_column_t *columns, int column_count) {
+int SQL::insert(const char *table_name, sql_column_t *columns, int column_count) {
     int table_name_size = strlen(table_name);
     if (table_name_size > 128) {
         DEBUG_SER_PRINTLN("Invalid table name. Name too long.");
@@ -185,79 +185,6 @@ int SQL::insertIntoTable(const char *table_name, sql_column_t *columns, int colu
 }
 
 /**
- * Get a value from the given table in the database. This function is currently vunerable to SQL injection. Has to be fixed in the future.
- * @param table_name The name of the table to get the value from. Has to be maximum of 128 characters long.
- * @param column A pointer to a sql_column_t struct, containing the column name and type.
- * @param where A pointer to a sql_column_t struct, containing the column name, type and value to search for.
- * @return void The value will be written to the column struct.
-*/
-void SQL::getValueFromTable(const char *table_name, sql_column_t *column, sql_column_t *where) {
-    int table_name_size = strlen(table_name);
-    if (table_name_size > 128) {
-        DEBUG_SER_PRINTLN("Invalid table name. Name too long.");
-        return;
-    }
-    String sql = "SELECT ";
-    sql += column->name;
-    sql += " FROM ";
-    sql += table_name;
-    sql += " WHERE ";
-    sql += where->name;
-    sql += " = ";
-    
-    switch (where->type) {
-        case SQL_TYPE_INT: {
-            sql += String(where->value_int);
-            break;
-        }
-        case SQL_TYPE_VARCHAR: {
-            sql += "'";
-            sql += where->value_varchar;
-            sql += "'";
-            break;
-        }
-        default: {
-            DEBUG_SER_PRINTLN("Invalid column type.");
-            return;
-        }
-    }
-    sql += " LIMIT 1";
-    DEBUG_SER_PRINT("Executing statement: ");
-    DEBUG_SER_PRINTLN(sql);
-    sqlite3_stmt *stmt;
-    int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL);
-    if (rc != SQLITE_OK) {
-        DEBUG_SER_PRINTLN("Failed to prepare statement.");
-        DEBUG_SER_PRINTLN(sqlite3_errmsg(db));
-        return;
-    }
-    rc = sqlite3_step(stmt);
-    if (rc == SQLITE_ROW) {
-        switch (column->type) {
-            case SQL_TYPE_INT: {
-                column->value_int = sqlite3_column_int(stmt, 0);
-                break;
-            }
-            case SQL_TYPE_VARCHAR: {
-                int size = strlen((const char *)sqlite3_column_text(stmt, 0)) + 1;
-                column->value_varchar = (char *) malloc(size);
-                memcpy(column->value_varchar, sqlite3_column_text(stmt, 0), size);
-                break;
-            }
-            default: {
-                DEBUG_SER_PRINTLN("Invalid column type.");
-                return;
-            }
-        }
-    } else {
-        DEBUG_SER_PRINTLN("Failed to get value from table.");
-        DEBUG_SER_PRINTLN(sqlite3_errmsg(db));
-        return;
-    }
-    sqlite3_finalize(stmt);
-}
-
-/**
  * Get multiple values from the given table in the database. This function is currently vunerable to SQL injection. Has to be fixed in the future.
  * @param table_name The name of the table to get the value from. Has to be maximum of 128 characters long.
  * @param columns An array of sql_column_t structs, containing the column names and types.
@@ -265,7 +192,7 @@ void SQL::getValueFromTable(const char *table_name, sql_column_t *column, sql_co
  * @param where A pointer to a sql_column_t struct, containing the column name, type and value to search for.
  * @return void The values will be written to the column structs.
 */
-void SQL::getValuesFromTable(const char *table_name, sql_column_t *columns, int column_count, sql_column_t *where) {
+void SQL::find(const char *table_name, sql_column_t *columns, int column_count, sql_column_t *where) {
     int table_name_size = strlen(table_name);
     if (table_name_size > 128) {
         DEBUG_SER_PRINTLN("Invalid table name. Name too long.");

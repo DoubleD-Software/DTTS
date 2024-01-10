@@ -56,9 +56,11 @@ void setup() {
     values[1].type = SQL_TYPE_VARCHAR;
     values[1].value_varchar = (char*) "Arnold Schwarzenegger";
 
-    sql_column_t select;
-    select.name = "id";
-    select.type = SQL_TYPE_INT;
+    sql_column_t select[2];
+    select[0].name = "id";
+    select[0].type = SQL_TYPE_INT;
+    select[1].name = "name";
+    select[1].type = SQL_TYPE_VARCHAR;
 
     sql_column_t where;
     where.name = "name";
@@ -68,11 +70,13 @@ void setup() {
     sql.begin("/sd/DTTS.db");
     sql.dropTable("teachers");
     sql.createTable("teachers", columns, 2);
-    sql.insertIntoTable("teachers", values, 2);
-    sql.getValueFromTable("teachers", &select, &where);
+    sql.insert("teachers", values, 2);
+    sql.find("teachers", select, 2, &where);
 
     DEBUG_SER_PRINT("ID: ");
-    DEBUG_SER_PRINTLN(select.value_int);
+    DEBUG_SER_PRINTLN(select[0].value_int);
+    DEBUG_SER_PRINT("Name: ");
+    DEBUG_SER_PRINTLN(select[1].value_varchar);
 
     oled.clear();
     oled.print("DTTS\n", 2);
