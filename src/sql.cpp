@@ -192,7 +192,7 @@ int SQL::insert(const char *table_name, sql_column_t *columns, int column_count)
  * @param where A pointer to a sql_column_t struct, containing the column name, type and value to search for.
  * @return void The values will be written to the column structs.
 */
-void SQL::find(const char *table_name, sql_column_t *columns, int column_count, sql_column_t *where) {
+void SQL::find(const char *table_name, sql_column_t *columns, int column_count, sql_column_t *where, int where_count) {
     int table_name_size = strlen(table_name);
     if (table_name_size > 128) {
         DEBUG_SER_PRINTLN("Invalid table name. Name too long.");
@@ -208,8 +208,29 @@ void SQL::find(const char *table_name, sql_column_t *columns, int column_count, 
     sql += " FROM ";
     sql += table_name;
     sql += " WHERE ";
-    sql += where->name;
-    sql += " = ";
+    for (int i = 0; i < where_count; i++) {
+        if (i != 0) {
+            sql += " AND ";
+        }
+        sql += where[i].name;
+        sql += " = ";
+        switch (where[i].type) {
+            case SQL_TYPE_INT: {
+                sql += String(where[i].value_int);
+                break;
+            }
+            case SQL_TYPE_VARCHAR: {
+                sql += "'";
+                sql += where[i].value_varchar;
+                sql += "'";
+                break;
+            }
+            default: {
+                DEBUG_SER_PRINTLN("Invalid column type.");
+                return;
+            }
+        }
+    }
     
     switch (where->type) {
         case SQL_TYPE_INT: {

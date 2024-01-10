@@ -71,7 +71,7 @@ void setup() {
     sql.dropTable("teachers");
     sql.createTable("teachers", columns, 2);
     sql.insert("teachers", values, 2);
-    sql.find("teachers", select, 2, &where);
+    sql.find("teachers", select, 2, &where, 1);
 
     DEBUG_SER_PRINT("ID: ");
     DEBUG_SER_PRINTLN(select[0].value_int);
