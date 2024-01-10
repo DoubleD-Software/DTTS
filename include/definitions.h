@@ -13,6 +13,8 @@
 #define NUM_DISP_CLK 25
 #define NUM_DISP_DIO 26
 
+#define SD_CS 5
+
 #define RFID_REGION RFID_REGION_EU
 
 #endif
