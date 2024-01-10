@@ -6,7 +6,7 @@
 #include <fatal.h>
 #include <sqlite3.h>
 #include <SD.h>
-#include <string.h>
+#include <cstring>
 
 #define SQL_TYPE_INT 0
 #define SQL_TYPE_VARCHAR 1

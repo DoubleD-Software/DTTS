@@ -45,7 +45,7 @@ void SQL::closeDB() {
 int SQL::clearTable(const char *table_name) {
     int table_name_size = strlen(table_name);
     if (table_name_size > 128) {
-        DEBUG_SER_PRINTLN("Invalid Table Name. Name too long.");
+        DEBUG_SER_PRINTLN("Invalid table name. Name too long.");
         return 1;
     }
     char sql[12 + table_name_size + 1] = {0}; // 12 characters for "DELETE FROM ", table_name_size characters for the table name and 1 character for the null terminator.
@@ -61,7 +61,7 @@ int SQL::clearTable(const char *table_name) {
 int SQL::dropTable(const char *table_name) {
     int table_name_size = strlen(table_name);
     if (table_name_size > 128) {
-        DEBUG_SER_PRINTLN("Invalid Table Name. Name too long.");
+        DEBUG_SER_PRINTLN("Invalid table name. Name too long.");
         return 1;
     }
     char sql[10 + table_name_size + 1] = {0}; // 10 characters for "DROP TABLE ", table_name_size characters for the table name and 1 character for the null terminator.
@@ -100,7 +100,7 @@ int SQL::dbExecSimple(const char *sql) {
 int SQL::createTable(const char *table_name, sql_column_descriptor_t *columns, int column_count) {
     int table_name_size = strlen(table_name);
     if (table_name_size > 128) {
-        DEBUG_SER_PRINTLN("Invalid Table Name. Name too long.");
+        DEBUG_SER_PRINTLN("Invalid table name. Name too long.");
         return 1;
     }
     String sql = "CREATE TABLE ";
@@ -146,18 +146,19 @@ int SQL::createTable(const char *table_name, sql_column_descriptor_t *columns, i
 int SQL::insertIntoTable(const char *table_name, sql_column_t *columns, int column_count) {
     int table_name_size = strlen(table_name);
     if (table_name_size > 128) {
-        DEBUG_SER_PRINTLN("Invalid Table Name. Name too long.");
+        DEBUG_SER_PRINTLN("Invalid table name. Name too long.");
         return 1;
     }
     String sql = "INSERT INTO ";
     sql += table_name;
+    sql += " (";
     for (int i = 0; i < column_count; i++) {
         if (i != 0) {
             sql += ", ";
         }
         sql += columns[i].name;
     }
-    sql += " ) VALUES (";
+    sql += ") VALUES (";
     for (int i = 0; i < column_count; i++) {
         if (i != 0) {
             sql += ", ";
@@ -193,7 +194,7 @@ int SQL::insertIntoTable(const char *table_name, sql_column_t *columns, int colu
 void SQL::getValueFromTable(const char *table_name, sql_column_t *column, sql_column_t *where) {
     int table_name_size = strlen(table_name);
     if (table_name_size > 128) {
-        DEBUG_SER_PRINTLN("Invalid Table Name. Name too long.");
+        DEBUG_SER_PRINTLN("Invalid table name. Name too long.");
         return;
     }
     String sql = "SELECT ";
