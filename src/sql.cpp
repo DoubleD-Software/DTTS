@@ -188,11 +188,12 @@ int SQL::insert(const char *table_name, sql_column_t *columns, int column_count)
  * Get multiple values from the given table in the database. This function is currently vunerable to SQL injection. Has to be fixed in the future.
  * @param table_name The name of the table to get the value from. Has to be maximum of 128 characters long.
  * @param columns An array of sql_column_t structs, containing the column names and types.
- * @param column_count The number of columns in the table.
  * @param where A pointer to a sql_column_t struct, containing the column name, type and value to search for.
+ * @param column_count The number of columns in the table.
+ * @param where_count The number of columns to search for.
  * @return void The values will be written to the column structs.
 */
-void SQL::find(const char *table_name, sql_column_t *columns, int column_count, sql_column_t *where, int where_count) {
+void SQL::find(const char *table_name, sql_column_t *columns, sql_column_t *where, int column_count, int where_count) {
     int table_name_size = strlen(table_name);
     if (table_name_size > 128) {
         DEBUG_SER_PRINTLN("Invalid table name. Name too long.");

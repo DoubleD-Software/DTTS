@@ -35,7 +35,7 @@ class SQL {
         int dropTable(const char *table_name);
         int createTable(const char *table_name, sql_column_descriptor_t *columns, int column_count);
         int insert(const char *table_name, sql_column_t *columns, int column_count);
-        void find(const char *table_name, sql_column_t *columns, int column_count, sql_column_t *where, int where_count);
+        void find(const char *table_name, sql_column_t *columns, sql_column_t *where, int column_count = 1, int where_count = 1);
 
     private:
         int dbExecSimple(const char *sql);

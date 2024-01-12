@@ -70,12 +70,11 @@ void setup() {
     where[1].type = SQL_TYPE_VARCHAR;
     where[1].value_varchar = (char*) "Arnol Schwarzenegger";
 
-
     sql.begin("/sd/DTTS.db");
     sql.dropTable("teachers");
     sql.createTable("teachers", columns, 2);
     sql.insert("teachers", values, 2);
-    sql.find("teachers", select, 2, where, 2);
+    sql.find("teachers", select, where, 2, 2);
 
     DEBUG_SER_PRINT("ID: ");
     DEBUG_SER_PRINTLN(select[0].value_int);
