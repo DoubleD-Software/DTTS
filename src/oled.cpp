@@ -27,7 +27,7 @@ void OLED::begin() {
 
     if(!display->begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Initialize the display object with the given parameters.
         DEBUG_SER_PRINTLN("SSD1306 allocation failed");
-        sysHalt(1, "OLED init failed.");
+        sysHalt(OLED_INIT_FAILED, "OLED init failed.");
     }
     DEBUG_SER_PRINTLN("OLED module initialized.");
 }

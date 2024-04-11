@@ -6,6 +6,7 @@
 #include <Adafruit_SSD1306.h>
 #include <debug.h>
 #include <fatal.h>
+#include <error_codes.h>
 
 class OLED {
     public:

@@ -17,4 +17,6 @@
 
 #define RFID_REGION RFID_REGION_EU
 
+#define DB_PATH "/sd/dtts.db"
+
 #endif

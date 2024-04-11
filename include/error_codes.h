@@ -1,0 +1,10 @@
+#ifndef ERROR_CODES_H
+#define ERROR_CODES_H
+
+#define OLED_INIT_FAILED 1
+#define DB_OPEN_FAILED 2
+#define DB_CREATE_FAILED 3
+#define SD_FAILED 4
+#define TABLE_CREATE_FAILED 5
+
+#endif
