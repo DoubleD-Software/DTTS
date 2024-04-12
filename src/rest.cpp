@@ -21,7 +21,20 @@ void DTTSRestApi::getRun(AsyncWebServerRequest *request) {
 
     if (request->hasParam("date")) {
         int date = request->getParam("date")->value().toInt();
-
+        std::vector<RunInfo> runs = db->getRunsByDate(date);
+        if (runs.size() == 0) {
+            request_result = 404;
+        } else {
+            for (int i = 0; i < runs.size(); i++) {
+                String index = String(i);
+                doc[index]["type"] = runs[i].type;
+                doc[index]["length"] = runs[i].length;
+                doc[index]["teacher"] = runs[i].teacher;
+                doc[index]["class"] = runs[i].class_name;
+                doc[index]["avg_grade"] = runs[i].avg_grade;
+                doc[index]["avg_time"] = runs[i].avg_time;
+            }
+        }
     } else if (request->hasParam("student") && request->hasParam("id")) {
         
     } else if (request->hasParam("id")) {
