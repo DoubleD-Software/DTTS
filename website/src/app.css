@@ -1,14 +1,47 @@
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background: #242424;
+body {
+  background-color: theme('colors.bg');
+  font-family: Inter, sans-serif;
+  font-weight: theme('fontWeight.medium');
+}
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+.input-tx {
+  background-color: theme('colors.bg-light');
+  width: 100%;
+  color: white;
+  padding: 0.5rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  font-weight: theme('fontWeight.medium');
+  font-size: theme('fontSize.lg');
+}
+
+.confirm-btn {
+  background-color: theme('colors.cf-green');
+  width: 100%;
+  border-radius: 0.5rem;
+  height: 2rem;
+  color: black;
+  fill: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.btn-icon {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-right: 0.5rem;
+}
+
+.btn-label {
+  font-weight: bold;
+  margin-left: auto;
+  position: absolute;
 }
