@@ -36,9 +36,9 @@
     <img src="{img}" alt="DTTS logo" class="w-80" />
 </div>
 <div class="m-7">
-    <p class="text-tx-gray text-xl">Benutzername</p>
+    <p class="text-tx-gray text-xl mt-2 mb-1">Benutzername</p>
     <input placeholder="MustermannE-MPG" bind:value={username} class="input-tx">
-    <p class="text-tx-gray text-xl">Passwort</p>
+    <p class="text-tx-gray text-xl mt-2 mb-1">Passwort</p>
     <input placeholder="Passwort" bind:value={password} type="password" class="input-tx">
     <p class="text-warn-red pt-2">{message}</p>
     <div class="absolute inset-x-0 bottom-0 p-7">
