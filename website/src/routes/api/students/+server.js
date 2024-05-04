@@ -40,3 +40,23 @@ export async function GET({url}) {
             }
         });
 }
+
+/** @type {import('./$types').RequestHandler} */
+export async function PATCH({url, request}) {
+    let studentId = url.searchParams.get('id');
+    console.log('Student PATCH request with id: ' + studentId);
+    let json = await request.json();
+    console.log(json);
+    return new Response(null, {status: 200});
+}
+
+/** @type {import('./$types').RequestHandler} */
+export async function PUT({request}) {
+    let data = await request.json();
+    console.log('Student PUT request')
+    console.log(data);
+    return json(
+        {
+            "id": 1
+        });
+}

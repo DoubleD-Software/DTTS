@@ -12,11 +12,15 @@ body {
   background-color: theme('colors.bg-light');
   width: 100%;
   color: white;
-  padding: 0.5rem;
-  height: 2rem;
+  height: 2.5rem;
+  padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   font-weight: theme('fontWeight.medium');
   font-size: theme('fontSize.lg');
+}
+
+.input-tx:focus {
+  outline: none;
 }
 
 .confirm-btn {
