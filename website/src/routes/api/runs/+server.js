@@ -5,9 +5,7 @@ export async function GET({url}) {
     let julianDate = url.searchParams.get('date');
     let studentId = url.searchParams.get('student');
     let runId = url.searchParams.get('id');
-    console.log(runId)
-    console.log(studentId)
-    console.log(julianDate)
+    console.log('Run GET request with date: ' + julianDate + ', student: ' + studentId + ', id: ' + runId)
 
     if (julianDate !== null) {
         if (julianDate === "2460431") {
@@ -116,4 +114,11 @@ export async function GET({url}) {
             });
     }
     return json({ message: "Something went wrong here..." });
+}
+
+/** @type {import('./$types').RequestHandler} */
+export async function DELETE({url}) {
+    let runId = url.searchParams.get('id');
+    console.log('Deleted run with id: ' + runId)
+    return new Response(null, {status: 200});
 }
