@@ -3,19 +3,12 @@
     import LeftIcon from "$lib/icons/LeftIcon.svelte";
     import RightIcon from "$lib/icons/RightIcon.svelte";
     import { onMount } from "svelte";
+    import { formatDate } from "$lib/util.js";
 
     const dispatch = createEventDispatcher();
     let currentDate = new Date();
     let formattedDate = formatDate(currentDate);
     let calendarElement;
-
-    function formatDate(date) {
-        return date.toLocaleDateString('de-DE', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
-    }
 
     function goPreviousDay() {
         currentDate.setDate(currentDate.getDate() - 1);

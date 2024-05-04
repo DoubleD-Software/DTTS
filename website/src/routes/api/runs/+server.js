@@ -23,7 +23,7 @@ export async function GET({url}) {
                     "avg_grade": "2,75",
                     "avg_time": 14900
                 },
-                "1": {
+                "2": {
                     "type": 1,
                     "length": 3200,
                     "teacher": "Hr. Schwarzenegger",
@@ -33,6 +33,12 @@ export async function GET({url}) {
                 }
             });
     } else if (runId !== null && studentId !== null) {
+        if (studentId === "1") {
+            return new Response(null, {status: 404});
+        }
+        if (runId === "3") {
+            return new Response(null, {status: 406})
+        }
         return json(
             {
                 "name": "Bali Schmidt",
@@ -55,6 +61,35 @@ export async function GET({url}) {
                 }
             });
     } else if (runId !== null) {
+        if (runId === "1") {
+            return new Response(null, {status: 404});
+        }
+        if (runId === "2") {
+            return json(
+                {
+                    "type": 1,
+                    "length": 3500,
+                    "date": 2460336,
+                    "teacher": "Hr. Schwarzenegger",
+                    "class": "9y",
+                    "grading_key_male": "9 Rundenlauf (m)",
+                    "grading_key_female": "9 Rundenlauf (w)",
+                    "avg_grade": "2,75",
+                    "avg_time": 770000,
+                    "students": {
+                        "7": {
+                            "name": "Bali Schmidt",
+                            "time": 770000,
+                            "grade": "2,00"
+                        },
+                        "10": {
+                            "name": "Ali Baba",
+                            "time": 780000,
+                            "grade": "3,90"
+                        }
+                    }
+                });
+        }
         return json(
             {
                 "type": 0,

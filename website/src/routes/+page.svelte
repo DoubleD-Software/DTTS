@@ -2,7 +2,7 @@
     import img from '$lib/images/dtts.webp'
     import ArrowRight from "$lib/icons/ArrowRightIcon.svelte";
     import { PUBLIC_API_URL } from "$env/static/public";
-    import { dateToJulian } from "$lib/julian.js";
+    import { dateToJulian } from "$lib/util.js";
 
     let username = "";
     let password = "";

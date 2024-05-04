@@ -16,15 +16,19 @@ export async function load({ url }) {
         method: 'GET',
         credentials: 'include'
     });
-    console.log(response.status)
-    if (!response.ok) {
+    if (response.status === 401) {
         throw redirect(302, '/');
+    } else if (response.status === 404 || response.status === 406) {
+        console.log('404 or 406' + studentId)
+        console.log('/runs' + (studentId === null ? '' : `/view?run=${runId}`));
+        throw redirect(302, '/runs' + (studentId === null ? '' : `/view?id=${runId}`));
     }
 
     const data = await response.json();
     return {
         title: studentId ? 'Runden' : (data.type ? 'Rundenlauf' : 'Sprint'),
         data: data,
-        student: !!studentId
+        student: !!studentId,
+        runId: runId
     };
 }

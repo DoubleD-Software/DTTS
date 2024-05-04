@@ -1,0 +1,47 @@
+<script>
+    import { formatTime } from "$lib/util.js";
+    import { formatDate } from "$lib/util.js";
+    import { julianToDate } from "$lib/util.js";
+    import Man from "$lib/icons/Man.svelte";
+    import Woman from "$lib/icons/Woman.svelte";
+
+    export let data;
+    let json = data.data;
+</script>
+
+<div class="text-white flex flex-col p-5 text-lg">
+    <div class="mb-4 font-bold">
+        <div class="flex">
+            <p><span class="text-tx-gray font-normal">Länge:</span> {json.length}m</p>
+            <p class="absolute left-[50%]"><span class="text-tx-gray font-normal">Datum:</span> {formatDate(julianToDate(json.date))}</p>
+        </div>
+        <div class="flex mt-2">
+            <p><span class="text-tx-gray font-normal">Ø-Note:</span> {json.avg_grade}</p>
+            <p class="absolute left-[50%]"><span class="text-tx-gray font-normal">Ø-Zeit:</span> {formatTime(json.avg_time, 1)}</p>
+        </div>
+        <p class="mt-2"><span class="text-tx-gray font-normal">Lehrer:</span> {json.teacher}</p>
+        <p class="mt-2"><span class="text-tx-gray font-normal">Klasse:</span> {json.class}</p>
+        <p class="text-tx-gray mt-2 font-normal">Notenschlüssel:</p>
+        <div class="fill-white flex-row flex font-bold">
+            <div class="flex">
+                <Man />
+                <p class="pl-2">{json.grading_key_male}</p>
+            </div>
+            <div class="flex absolute right-0 left-[50%]">
+                <Woman />
+                <p class="pl-2">{json.grading_key_female}</p>
+            </div>
+        </div>
+    </div>
+    <div class="border-t border-gray-500 pt-3">
+        {#each Object.entries(json.students) as [id, student]}
+            <a href="{json.type === 1 ? `/runs/view?id=${data.runId}&student=${id}` : ''}" class="flex justify-between items-center mb-2 bg-bg-lightest p-2 rounded-lg">
+                <p>{student.name}</p>
+                <div class="flex items-center gap-4">
+                    <p class="text-tx-gray">{formatTime(student.time, json.type)}</p>
+                    <p class="font-bold text-xl">{student.grade}</p>
+                </div>
+            </a>
+        {/each}
+    </div>
+</div>
