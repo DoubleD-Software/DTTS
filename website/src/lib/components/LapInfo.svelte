@@ -7,10 +7,10 @@
 
 <div class="text-white flex-row p-5 text-center text-lg">
     <div class="text-3xl font-semibold mb-2">{json.name}</div>
-    <div class="mb-4">
-        <p><span class="text-tx-gray">Länge:</span> {json.length}m</p>
-        <p><span class="text-tx-gray">Note:</span> {json.grade}</p>
-        <p><span class="text-tx-gray">Zeit:</span> {formatTime(json.time, 1)}</p>
+    <div class="mb-4 font-bold">
+        <p><span class="text-tx-gray font-normal">Länge:</span> {json.length}m</p>
+        <p><span class="text-tx-gray font-normal">Note:</span> {json.grade}</p>
+        <p><span class="text-tx-gray font-normal">Zeit:</span> {formatTime(json.time, 1)}</p>
     </div>
     <div class="border-t border-gray-500 pt-3">
         {#each Object.entries(json.rounds) as [index, round]}

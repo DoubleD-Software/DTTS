@@ -72,6 +72,7 @@
             </div>
         </div>
     </div>
+    <p class="font-bold text-3xl mt-3 mb-2 text-center">Schüler</p>
     <div class="border-t border-gray-500 pt-3">
         {#each Object.entries(json.students) as [id, student]}
             <a href="{json.type === 1 ? `/runs/view?id=${data.runId}&student=${id}` : ''}" class="flex justify-between items-center mb-2 bg-bg-lightest p-2 rounded-lg">
