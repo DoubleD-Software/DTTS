@@ -2,8 +2,6 @@
     import { PUBLIC_API_URL } from "$env/static/public";
     import { onMount } from "svelte";
     import ArrowRight from "$lib/icons/ArrowRightIcon.svelte";
-
-    let urlParams = new URLSearchParams(window.location.search);
     let classes = {};
     let message = "";
 
@@ -25,7 +23,7 @@
         const updatedStudent = {
             name: document.getElementById("name").value,
             gender: document.querySelector('.bg-select-gray').id === "female" ? 1 : 0,
-            class: parseInt(document.getElementById("class").value)
+            class_id: parseInt(document.getElementById("class").value)
         };
 
         if (updatedStudent.name === "") {
