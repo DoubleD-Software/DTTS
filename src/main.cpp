@@ -17,6 +17,9 @@ TM1637 num_disp(NUM_DISP_CLK, NUM_DISP_DIO, 6);
 Database db(DB_PATH);
 DTTSServer server(&db);
 
+#define SSID "DTTS"
+#define PASSWORD "doubledsoftware"
+
 void rfidCallback(uint8_t* tag, uint8_t rssi) {
     DEBUG_SER_PRINT("Tag: ");
     for (int i = 0; i < 12; i++) {
@@ -31,6 +34,9 @@ void rfidCallback(uint8_t* tag, uint8_t rssi) {
 void setup() {
     DEBUG_SER_INIT(115200);
     DEBUG_SER_PRINTLN("Initializing DTTS...");
+
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP(SSID, PASSWORD);
 
     oled.begin();
     rfid.begin();

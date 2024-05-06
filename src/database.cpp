@@ -3,28 +3,28 @@
 const SqlTable Database::TABLES[] = {
     SqlTable("teachers", {
         SqlColumn("id", SQL_TYPE_INT, SQL_TYPE_PRIMARY_KEY | SQL_TYPE_AUTO_INCREMENT),
-        SqlColumn("name", SQL_TYPE_VC_255),
-        SqlColumn("username", SQL_TYPE_VC_255),
-        SqlColumn("password", SQL_TYPE_VC_255),
+        SqlColumn("name", SQL_TYPE_TEXT),
+        SqlColumn("username", SQL_TYPE_TEXT),
+        SqlColumn("password", SQL_TYPE_TEXT),
         SqlColumn("administrator", SQL_TYPE_INT)
     }),
     SqlTable("classes", {
         SqlColumn("id", SQL_TYPE_INT, SQL_TYPE_PRIMARY_KEY | SQL_TYPE_AUTO_INCREMENT),
-        SqlColumn("name", SQL_TYPE_VC_255)
+        SqlColumn("name", SQL_TYPE_TEXT)
     }),
     SqlTable("grading_keys", {
         SqlColumn("id", SQL_TYPE_INT, SQL_TYPE_PRIMARY_KEY | SQL_TYPE_AUTO_INCREMENT),
-        SqlColumn("name", SQL_TYPE_VC_255),
+        SqlColumn("name", SQL_TYPE_TEXT),
         SqlColumn("type", SQL_TYPE_INT)
     }),
     SqlTable("grading_keys_grades", {
-        SqlColumn("grading_key_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "grading_keys", "id"),
-        SqlColumn("time", SQL_TYPE_FLOAT),
-        SqlColumn("grade", SQL_TYPE_FLOAT)
+        SqlColumn("grading_key_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY | SQL_TYPE_PRIMARY_KEY, "grading_keys", "id"),
+        SqlColumn("time", SQL_TYPE_INT),
+        SqlColumn("grade", SQL_TYPE_REAL)
     }),
     SqlTable("students", {
         SqlColumn("id", SQL_TYPE_INT, SQL_TYPE_PRIMARY_KEY | SQL_TYPE_AUTO_INCREMENT),
-        SqlColumn("name", SQL_TYPE_VC_255),
+        SqlColumn("name", SQL_TYPE_TEXT),
         SqlColumn("gender", SQL_TYPE_INT),
         SqlColumn("class_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "classes", "id")
     }),
@@ -36,20 +36,27 @@ const SqlTable Database::TABLES[] = {
         SqlColumn("grading_key_m_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "grading_keys", "id"),
         SqlColumn("grading_key_f_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "grading_keys", "id"),
         SqlColumn("teacher_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "teachers", "id"),
-        SqlColumn("length", SQL_TYPE_INT)
+        SqlColumn("length", SQL_TYPE_INT),
+        SqlColumn("laps", SQL_TYPE_REAL),
     }),
     SqlTable("results", {
         SqlColumn("id", SQL_TYPE_INT, SQL_TYPE_PRIMARY_KEY | SQL_TYPE_AUTO_INCREMENT),
         SqlColumn("run_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "runs", "id"),
         SqlColumn("student_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "students", "id"),
-        SqlColumn("time", SQL_TYPE_FLOAT),
-        SqlColumn("grade", SQL_TYPE_FLOAT)
+        SqlColumn("time", SQL_TYPE_INT),
+        SqlColumn("type", SQL_TYPE_INT),
+        SqlColumn("date", SQL_TYPE_INT),
+        SqlColumn("grade", SQL_TYPE_REAL)
     }),
     SqlTable("laps", {
-        SqlColumn("id", SQL_TYPE_INT, SQL_TYPE_PRIMARY_KEY | SQL_TYPE_AUTO_INCREMENT),
         SqlColumn("lap_num", SQL_TYPE_INT),
         SqlColumn("result_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "results", "id"),
-        SqlColumn("time", SQL_TYPE_FLOAT)
+        SqlColumn("time", SQL_TYPE_INT),
+        SqlColumn("length", SQL_TYPE_INT)
+    }),
+    SqlTable("participants", {
+        SqlColumn("run_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "runs", "id"),
+        SqlColumn("student_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "students", "id")
     })
 };
 
@@ -84,9 +91,17 @@ void Database::close() {
 }
 
 void Database::createTables() {
+    DEBUG_SER_PRINTLN("Enabling foreign key support (PRAGMA foreign_keys = ON;)");
+    if (sqlite3_exec(this->db, "PRAGMA foreign_keys = ON;", 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to enable foreign key support: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sysHalt(DB_CREATE_FAILED, "Failed to enable foreign key support.");
+    }
+
     for (int i = 0; i < sizeof(TABLES) / sizeof(SqlTable); i++) {
         SqlTable table = TABLES[i];
         String sql = "CREATE TABLE IF NOT EXISTS " + table.name + " (";
+        String foreign_key_statements = "";
         for (int j = 0; j < table.columns.size(); j++) {
             SqlColumn column = table.columns[j];
             sql += column.name;
@@ -94,11 +109,11 @@ void Database::createTables() {
                 case SQL_TYPE_INT:
                     sql += " INTEGER";
                     break;
-                case SQL_TYPE_FLOAT:
-                    sql += " FLOAT";
+                case SQL_TYPE_REAL:
+                    sql += " DOUBLE";
                     break;
-                case SQL_TYPE_VC_255:
-                    sql += " VARCHAR(255)";
+                case SQL_TYPE_TEXT:
+                    sql += " TEXT";
                     break;
             }
             if (column.flags & SQL_TYPE_PRIMARY_KEY) {
@@ -108,12 +123,13 @@ void Database::createTables() {
                 sql += " AUTOINCREMENT";
             }
             if (column.flags & SQL_TYPE_FOREIGN_KEY) {
-                sql += ", FOREIGN KEY(" + String(column.name) + ") REFERENCES " + column.foreign_table + "(" + column.foreign_column + ") ON DELETE CASCADE ON UPDATE CASCADE";
+                foreign_key_statements += ", FOREIGN KEY(" + String(column.name) + ") REFERENCES " + column.foreign_table + "(" + column.foreign_column + ") ON DELETE CASCADE";
             }
             if (j < table.columns.size() - 1) {
                 sql += ", ";
             }
         }
+        sql += foreign_key_statements;
         sql += ");";
         DEBUG_SER_PRINTLN(sql);
         if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
@@ -137,6 +153,7 @@ std::vector<RunInfo> Database::getRunsByDate(int date) {
         sqlite3_finalize(run_stmt);
         return runs;
     }
+    
     while (sqlite3_step(run_stmt) == SQLITE_ROW) {
         RunInfo run;
         run.run_id = sqlite3_column_int(run_stmt, 0);
@@ -150,11 +167,13 @@ std::vector<RunInfo> Database::getRunsByDate(int date) {
             sqlite3_finalize(teacher_stmt);
             break;
         }
+        
         if (sqlite3_step(teacher_stmt) == SQLITE_ROW) {
-            run.teacher = String((const char*) sqlite3_column_text(teacher_stmt, 1));
+            run.teacher = String((const char*) sqlite3_column_text(teacher_stmt, 0));
         } else {
             run.teacher = UNKNOWN_NAME;
         }
+
         sqlite3_finalize(teacher_stmt);
         sqlite3_stmt* class_stmt;
         String class_sql = "SELECT name FROM classes WHERE id = " + String(sqlite3_column_int(run_stmt, 3)) + ";";
@@ -165,7 +184,7 @@ std::vector<RunInfo> Database::getRunsByDate(int date) {
             break;
         }
         if (sqlite3_step(class_stmt) == SQLITE_ROW) {
-            run.class_name = String((const char*) sqlite3_column_text(class_stmt, 1));
+            run.class_name = String((const char*) sqlite3_column_text(class_stmt, 0));
         } else {
             run.class_name = UNKNOWN_NAME;
         }
@@ -182,8 +201,8 @@ std::vector<RunInfo> Database::getRunsByDate(int date) {
         float total_time = 0;
         int num_results = 0;
         while (sqlite3_step(result_stmt) == SQLITE_ROW) {
-            total_grade += sqlite3_column_double(result_stmt, 4);
-            total_time += sqlite3_column_double(result_stmt, 3);
+            total_grade += sqlite3_column_double(result_stmt, 6);
+            total_time += sqlite3_column_int(result_stmt, 3);
             num_results++;
         }
         if (num_results == 0) {
@@ -217,10 +236,10 @@ RunInfoSpecific Database::getRunInfo(int run_id) {
     while (sqlite3_step(run_stmt) == SQLITE_ROW && count < 1) {
         count++;
         run.type = sqlite3_column_int(run_stmt, 1);
-        run.length = sqlite3_column_int(run_stmt, 7);
-        run.date = sqlite3_column_int(run_stmt, 2);
+        run.length = (int) sqlite3_column_int(run_stmt, 7);
+        run.date = (int) sqlite3_column_int(run_stmt, 2);
         sqlite3_stmt* teacher_stmt;
-        String teacher_sql = "SELECT name FROM teachers WHERE id = " + String(sqlite3_column_int(run_stmt, 6)) + ";";
+        String teacher_sql = "SELECT name FROM teachers WHERE id = " + String((int) sqlite3_column_int(run_stmt, 6)) + ";";
         if (sqlite3_prepare_v2(this->db, teacher_sql.c_str(), -1, &teacher_stmt, 0) != SQLITE_OK) {
             DEBUG_SER_PRINT("Failed to prepare statement: ");
             DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
@@ -228,7 +247,7 @@ RunInfoSpecific Database::getRunInfo(int run_id) {
             break;
         }
         if (sqlite3_step(teacher_stmt) == SQLITE_ROW) {
-            run.teacher = String((const char*) sqlite3_column_text(teacher_stmt, 1));
+            run.teacher = String((const char*) sqlite3_column_text(teacher_stmt, 0));
         } else {
             run.teacher = UNKNOWN_NAME;
         }
@@ -242,7 +261,7 @@ RunInfoSpecific Database::getRunInfo(int run_id) {
             break;
         }
         if (sqlite3_step(class_stmt) == SQLITE_ROW) {
-            run.class_name = String((const char*) sqlite3_column_text(class_stmt, 1));
+            run.class_name = String((const char*) sqlite3_column_text(class_stmt, 0));
         } else {
             run.class_name = UNKNOWN_NAME;
         }
@@ -256,7 +275,7 @@ RunInfoSpecific Database::getRunInfo(int run_id) {
             break;
         }
         if (sqlite3_step(grading_key_m_stmt) == SQLITE_ROW) {
-            run.grading_key_m = String((const char*) sqlite3_column_text(grading_key_m_stmt, 1));
+            run.grading_key_m = String((const char*) sqlite3_column_text(grading_key_m_stmt, 0));
         } else {
             run.grading_key_m = UNKNOWN_NAME;
         }
@@ -270,7 +289,7 @@ RunInfoSpecific Database::getRunInfo(int run_id) {
             break;
         }
         if (sqlite3_step(grading_key_f_stmt) == SQLITE_ROW) {
-            run.grading_key_f = String((const char*) sqlite3_column_text(grading_key_f_stmt, 1));
+            run.grading_key_f = String((const char*) sqlite3_column_text(grading_key_f_stmt, 0));
         } else {
             run.grading_key_f = UNKNOWN_NAME;
         }
@@ -298,13 +317,13 @@ RunInfoSpecific Database::getRunInfo(int run_id) {
                 break;
             }
             if (sqlite3_step(student_stmt) == SQLITE_ROW) {
-                student.name = String((const char*) sqlite3_column_text(student_stmt, 1));
+                student.name = String((const char*) sqlite3_column_text(student_stmt, 0));
             } else {
                 student.name = UNKNOWN_NAME;
             }
             sqlite3_finalize(student_stmt);
-            student.time = sqlite3_column_double(result_stmt, 3);
-            student.grade = sqlite3_column_double(result_stmt, 4);
+            student.time = sqlite3_column_int(result_stmt, 3);
+            student.grade = sqlite3_column_double(result_stmt, 6);
             total_grade += student.grade;
             total_time += student.time;
             num_results++;
@@ -338,10 +357,15 @@ RunInfoStudentLaps Database::getRunInfoStudent(int run_id, int student_id) {
     }
     int count = 0;
     while (sqlite3_step(result_stmt) == SQLITE_ROW && count < 1) {
+        int type = sqlite3_column_int(result_stmt, 4);
+        if (type == RUN_TYPE_SPRINT) {
+            student.time = -2;
+            break;
+        }
+
         count++;
-        student.grade = sqlite3_column_double(result_stmt, 4);
-        student.time = sqlite3_column_double(result_stmt, 3);
-        student.length = sqlite3_column_int(result_stmt, 5);
+        student.grade = sqlite3_column_double(result_stmt, 6);
+        student.time = sqlite3_column_int(result_stmt, 3);
         sqlite3_stmt* student_stmt;
         String student_sql = "SELECT name FROM students WHERE id = " + String(student_id) + ";";
         if (sqlite3_prepare_v2(this->db, student_sql.c_str(), -1, &student_stmt, 0) != SQLITE_OK) {
@@ -351,7 +375,7 @@ RunInfoStudentLaps Database::getRunInfoStudent(int run_id, int student_id) {
             break;
         }
         if (sqlite3_step(student_stmt) == SQLITE_ROW) {
-            student.student_name = String((const char*) sqlite3_column_text(student_stmt, 1));
+            student.student_name = String((const char*) sqlite3_column_text(student_stmt, 0));
         } else {
             student.student_name = UNKNOWN_NAME;
         }
@@ -366,9 +390,10 @@ RunInfoStudentLaps Database::getRunInfoStudent(int run_id, int student_id) {
         }
         while (sqlite3_step(lap_stmt) == SQLITE_ROW) {
             RunInfoLap lap;
-            lap.lap_number = sqlite3_column_int(lap_stmt, 1);
-            lap.length = sqlite3_column_double(lap_stmt, 2);
-            lap.time = sqlite3_column_double(lap_stmt, 3);
+            lap.lap_number = sqlite3_column_int(lap_stmt, 0);
+            lap.length = sqlite3_column_int(lap_stmt, 3);
+            student.length += lap.length;
+            lap.time = sqlite3_column_int(lap_stmt, 2);
             student.laps.push_back(lap);
         }
         sqlite3_finalize(lap_stmt);
@@ -377,7 +402,21 @@ RunInfoStudentLaps Database::getRunInfoStudent(int run_id, int student_id) {
 }
 
 int Database::deleteRun(int run_id) {
-    String sql = "DELETE FROM runs WHERE id = " + String(run_id) + ";";
+    String sql = "SELECT * FROM runs WHERE id = " + String(run_id) + ";";
+    sqlite3_stmt* run_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &run_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(run_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(run_stmt) != SQLITE_ROW) {
+        sqlite3_finalize(run_stmt);
+        return DB_NOT_FOUND;
+    }
+    sqlite3_finalize(run_stmt);
+
+    sql = "DELETE FROM runs WHERE id = " + String(run_id) + ";";
     if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
         DEBUG_SER_PRINT("Failed to delete run: ");
         DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
@@ -387,9 +426,27 @@ int Database::deleteRun(int run_id) {
     return DB_SUCCESS;
 }
 
-int Database::putRun(int type, int date, int class_id, int grading_key_m_id, int grading_key_f_id, int teacher_id, int length) {
-    // Incomplete
-    return DB_FAILED;
+int Database::putRun(int type, int date, int class_id, int grading_key_m_id, int grading_key_f_id, int teacher_id, int length, int laps, std::vector<int> participants) {
+    String sql = "INSERT INTO runs (type, date, class_id, grading_key_m_id, grading_key_f_id, teacher_id, length, laps) VALUES (" + String(type) + ", " + String(date) + ", " + String(class_id) + ", " + String(grading_key_m_id) + ", " + String(grading_key_f_id) + ", " + String(teacher_id) + ", " + String(length) + ", " + String(laps) + ");";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to insert run: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        if (sqlite3_errcode(this->db) == SQLITE_CONSTRAINT) {
+            return DB_CONFLICT;
+        } else {
+            return DB_FAILED;
+        }
+    }
+    int run_id = sqlite3_last_insert_rowid(this->db);
+    for (int i = 0; i < participants.size(); i++) {
+        String participant_sql = "INSERT INTO participants (run_id, student_id) VALUES (" + String(run_id) + ", " + String(participants[i]) + ");";
+        if (sqlite3_exec(this->db, participant_sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+            DEBUG_SER_PRINT("Failed to insert participant: ");
+            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+            return DB_FAILED;
+        }
+    }
+    return run_id;
 }
 
 StudentInfo Database::getStudentInfo(int student_id) {
@@ -407,7 +464,7 @@ StudentInfo Database::getStudentInfo(int student_id) {
     while (sqlite3_step(student_stmt) == SQLITE_ROW && count < 1) {
         count++;
         student.student_name = String((const char*) sqlite3_column_text(student_stmt, 1));
-        student.gender = sqlite3_column_int(student_stmt, 2);
+        student.gender = sqlite3_column_int(student_stmt, 1);
         sqlite3_stmt* class_stmt;
         String class_sql = "SELECT name FROM classes WHERE id = " + String(sqlite3_column_int(student_stmt, 3)) + ";";
         if (sqlite3_prepare_v2(this->db, class_sql.c_str(), -1, &class_stmt, 0) != SQLITE_OK) {
@@ -417,7 +474,7 @@ StudentInfo Database::getStudentInfo(int student_id) {
             break;
         }
         if (sqlite3_step(class_stmt) == SQLITE_ROW) {
-            student.class_name = String((const char*) sqlite3_column_text(class_stmt, 1));
+            student.class_name = String((const char*) sqlite3_column_text(class_stmt, 0));
         } else {
             student.class_name = UNKNOWN_NAME;
         }
@@ -438,13 +495,13 @@ StudentInfo Database::getStudentInfo(int student_id) {
         int sprint_num_results = 0;
         int lap_run_num_results = 0;
         while (sqlite3_step(result_stmt) == SQLITE_ROW) {
-            if (sqlite3_column_int(result_stmt, 1) == RUN_TYPE_SPRINT) {
-                sprint_total_grade += sqlite3_column_double(result_stmt, 4);
-                sprint_total_time += sqlite3_column_double(result_stmt, 3);
+            if (sqlite3_column_int(result_stmt, 4) == RUN_TYPE_SPRINT) {
+                sprint_total_grade += sqlite3_column_double(result_stmt, 6);
+                sprint_total_time += sqlite3_column_int(result_stmt, 3);
                 sprint_num_results++;
             } else {
-                lap_run_total_grade += sqlite3_column_double(result_stmt, 4);
-                lap_run_total_time += sqlite3_column_double(result_stmt, 3);
+                lap_run_total_grade += sqlite3_column_double(result_stmt, 6);
+                lap_run_total_time += sqlite3_column_int(result_stmt, 3);
                 lap_run_num_results++;
             }
         }
@@ -488,8 +545,8 @@ StudentInfo Database::getStudentInfo(int student_id) {
                 break;
             }
             if (sqlite3_step(result_stmt) == SQLITE_ROW) {
-                run.grade = sqlite3_column_double(result_stmt, 4);
-                run.time = sqlite3_column_double(result_stmt, 3);
+                run.grade = sqlite3_column_double(result_stmt, 6);
+                run.time = sqlite3_column_int(result_stmt, 3);
             } else {
                 run.grade = 0;
                 run.time = 0;
@@ -514,25 +571,38 @@ int Database::deleteStudent(int student_id) {
     return DB_SUCCESS;
 }
 
-int Database::putStudent(String name, int gender, String class_name) {
+int Database::putStudent(String name, int gender, int class_id) {
+    String sql = "SELECT id FROM students WHERE name = '" + name + "';";
+
+    sqlite3_stmt* student_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &student_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(student_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(student_stmt) == SQLITE_ROW) {
+        sqlite3_finalize(student_stmt);
+        return DB_CONFLICT;
+    }
+    sqlite3_finalize(student_stmt);
+
+    sql = "SELECT id FROM classes WHERE id = " + String(class_id) + ";";
     sqlite3_stmt* class_stmt;
-    String class_sql = "SELECT id FROM classes WHERE name = '" + class_name + "';";
-    if (sqlite3_prepare_v2(this->db, class_sql.c_str(), -1, &class_stmt, 0) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &class_stmt, 0) != SQLITE_OK) {
         DEBUG_SER_PRINT("Failed to prepare statement: ");
         DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
         sqlite3_finalize(class_stmt);
         return DB_FAILED;
     }
-    int class_id;
-    if (sqlite3_step(class_stmt) == SQLITE_ROW) {
-        class_id = sqlite3_column_int(class_stmt, 0);
+    if (sqlite3_step(class_stmt) != SQLITE_ROW) {
         sqlite3_finalize(class_stmt);
-    } else {
-        sqlite3_finalize(class_stmt);
-        return DB_FAILED;
+        return DB_NOT_FOUND;
     }
-    String student_sql = "INSERT INTO students (name, gender, class_id) VALUES ('" + name + "', " + String(gender) + ", " + String(class_id) + ");";
-    if (sqlite3_exec(this->db, student_sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+    sqlite3_finalize(class_stmt);
+
+    sql = "INSERT INTO students (name, gender, class_id) VALUES ('" + name + "', " + String(gender) + ", " + String(class_id) + ");";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
         DEBUG_SER_PRINT("Failed to insert student: ");
         DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
         if (sqlite3_errcode(this->db) == SQLITE_CONSTRAINT) {
@@ -543,4 +613,43 @@ int Database::putStudent(String name, int gender, String class_name) {
     }
     int student_id = sqlite3_last_insert_rowid(this->db);
     return student_id;
+}
+
+int Database::patchStudent(String name, int class_id) {
+    String sql = "SELECT id FROM students WHERE name = '" + name + "';";
+
+    sqlite3_stmt* student_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &student_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(student_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(student_stmt) != SQLITE_ROW) {
+        sqlite3_finalize(student_stmt);
+        return DB_NOT_FOUND;
+    }
+    sqlite3_finalize(student_stmt);
+
+    sql = "SELECT id FROM students WHERE name = '" + name + "' AND class_id = " + String(class_id) + ";";
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &student_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(student_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(student_stmt) == SQLITE_ROW) {
+        sqlite3_finalize(student_stmt);
+        return DB_CONFLICT;
+    }
+    sqlite3_finalize(student_stmt);
+
+    sql = "UPDATE students SET class_id = " + String(class_id) + " WHERE name = '" + name + "';";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to update student: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+    return DB_SUCCESS;    
+
 }

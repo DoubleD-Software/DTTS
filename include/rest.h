@@ -14,13 +14,17 @@
 class DTTSRestApi {
     public:
         DTTSRestApi(Database *db);
-        void runHandler(AsyncWebServerRequest *request);
-
-    private:
-        Database *db;
         void getRun(AsyncWebServerRequest *request);
         void deleteRun(AsyncWebServerRequest *request);
-        void putRun(AsyncWebServerRequest *request);
+        void putRun(AsyncWebServerRequest *request, String data);
+        void getStudent(AsyncWebServerRequest *request);
+        void deleteStudent(AsyncWebServerRequest *request);
+        void putStudent(AsyncWebServerRequest *request, String data);
+        void patchStudent(AsyncWebServerRequest *request, String data);
+        
+    private:
+        Database *db;
+        int last_run_id = 0;
 };
 
 #endif
