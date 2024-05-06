@@ -6,9 +6,9 @@
     export let type;
     export let length;
     export let teacher;
-    export let run_class;
-    export let avg_grade;
-    export let avg_time;
+    export let runClass;
+    export let avgGrade;
+    export let avgTime;
 </script>
 
 <div class="mt-3 p-5 rounded-xl bg-bg-lightest relative">
@@ -19,11 +19,9 @@
     </div>
     <div>
         <p><span class="text-tx-gray">Lehrer:</span> {teacher}</p>
-        <p><span class="text-tx-gray">Klasse:</span> {run_class}</p>
-        <div class="flex items-center justify-between text-base">
-            <span><span class="text-tx-gray float-left pr-1">Ø-Note: </span>{avg_grade}</span>
-            <span class="absolute left-0 right-0 text-center mx-auto"><span
-                    class="text-tx-gray">Ø-Zeit:</span> {formatTime(avg_time, type)}</span>
-        </div>
+        <p><span class="text-tx-gray">Klasse:</span> {runClass}</p>
+        <span><span class="text-tx-gray float-left pr-1">Ø-Note: </span>{avgGrade}</span>
+        <span class="absolute left-[50%]"><span
+                class="text-tx-gray">Ø-Zeit:</span> {formatTime(avgTime, type)}</span>
     </div>
 </div>

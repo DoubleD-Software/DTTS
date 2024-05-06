@@ -38,7 +38,7 @@
 <div class="m-3 text-white">
     {#each runs as [id, run]}
         <a href="/runs/view?id={id}">
-            <RunListEntry type={run.type} length={run.length} teacher={run.teacher} run_class={run.class} avg_time={run.avg_time} avg_grade={run.avg_grade} />
+            <RunListEntry type={run.type} length={run.length} teacher={run.teacher} runClass={run.class} avgTime={run.avg_time} avgGrade={run.avg_grade} />
         </a>
     {/each}
     {#if runs.length === 0}

@@ -47,16 +47,31 @@ export async function PATCH({url, request}) {
     console.log('Student PATCH request with id: ' + studentId);
     let json = await request.json();
     console.log(json);
+    if (json.name === "Linus Schmidt") {
+        console.log('Student PATCH 409')
+        return new Response(null, {status: 409});
+    }
     return new Response(null, {status: 200});
 }
 
 /** @type {import('./$types').RequestHandler} */
 export async function PUT({request}) {
     let data = await request.json();
-    console.log('Student PUT request')
+    console.log('Student PUT request');
     console.log(data);
+    if (data.name === "Linus Schmidt") {
+        console.log('Student PUT 409');
+        return new Response(null, {status: 409});
+    }
     return json(
         {
             "id": 1
         });
+}
+
+/** @type {import('./$types').RequestHandler} */
+export async function DELETE({url}) {
+    let runId = url.searchParams.get('id');
+    console.log('Deleted student with id: ' + runId)
+    return new Response(null, {status: 200});
 }

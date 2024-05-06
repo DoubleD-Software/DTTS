@@ -32,15 +32,15 @@
 </script>
 
 <div class="text-white flex flex-col p-5 text-lg relative">
-    <button class="fill-warn-red absolute right-4 scale-150 z-10" on:click={toggleModal}>
+    <button class="fill-warn-red absolute right-4 pt-1 scale-150 z-10" on:click={toggleModal}>
         <Trash />
     </button>
 
     {#if showModal}
         <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-30">
             <div class="bg-bg-light p-5 rounded-lg shadow-lg text-white m-5 z-40">
-                <p class="text-lg">Soll dieser Lauf wirklich gelöscht werden?</p>
-                <p class="font-bold">Dies kann nicht rückgängig gemacht werden!</p>
+                <p>Soll dieser Lauf wirklich gelöscht werden?</p>
+                <p class="font-bold text-lg">Dies kann nicht rückgängig gemacht werden!</p>
                 <div class="flex justify-end gap-4 mt-4">
                     <button class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded" on:click={toggleModal}>Abbrechen</button>
                     <button class="bg-warn-red hover:bg-red-700 text-white font-bold py-2 px-4 rounded" on:click={deleteRun}>Löschen</button>
@@ -75,8 +75,15 @@
     <p class="font-bold text-3xl mt-3 mb-2 text-center">Schüler</p>
     <div class="border-t border-gray-500 pt-3">
         {#each Object.entries(json.students) as [id, student]}
-            <a href="{json.type === 1 ? `/runs/view?id=${data.runId}&student=${id}` : ''}" class="flex justify-between items-center mb-2 bg-bg-lightest p-2 rounded-lg">
-                <p>{student.name}</p>
+            <a href="{json.type === 1 ? `/runs/view?id=${data.runId}&student=${id}` : ''}" class="flex justify-between items-center mb-2 bg-bg-lightest p-2 pr-3 rounded-lg">
+                <div class="flex fill-white">
+                    {#if student.gender === 1}
+                        <Woman />
+                    {:else}
+                        <Man />
+                    {/if}
+                    <p class="pl-2">{student.name}</p>
+                </div>
                 <div class="flex items-center gap-4">
                     <p class="text-tx-gray">{formatTime(student.time, json.type)}</p>
                     <p class="font-bold text-xl">{student.grade}</p>

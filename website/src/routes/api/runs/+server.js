@@ -78,11 +78,13 @@ export async function GET({url}) {
                         "7": {
                             "name": "Bali Schmidt",
                             "time": 770000,
+                            "gender": 0,
                             "grade": "2,00"
                         },
                         "10": {
                             "name": "Ali Baba",
                             "time": 780000,
+                            "gender": 1,
                             "grade": "3,90"
                         }
                     }
