@@ -6,7 +6,7 @@
 
     let classes = [];
 
-    async function fetchRuns() {
+    async function fetchClasses() {
         try {
             const response = await fetch(PUBLIC_API_URL + '/classes', {
                 method: 'GET',
@@ -26,7 +26,7 @@
         }
     }
 
-    onMount(fetchRuns);
+    onMount(fetchClasses);
 </script>
 
 <div class="m-3 text-white">

@@ -45,7 +45,7 @@
         } else if (response.status === 401) {
             window.location.href = '/';
         } else if (response.status === 409) {
-            message = "Schüler existiert bereits in dieser Klasse.";
+            message = "Ein Schüler mit gleichem Namen existiert bereits in dieser Klasse.";
         } else {
             console.error('Failed to create student.');
         }
@@ -67,11 +67,11 @@
 <div class="p-5 text-white">
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Geschlecht</p>
-        <div class="flex gap-2">
-            <button type="button" id="female" class="female h-8 flex-1 bg-bg-light rounded-lg focus:outline-none">
+        <div class="flex gap-2 h-[2.5rem]">
+            <button type="button" id="female" class="female flex-1 bg-bg-light rounded-lg focus:outline-none">
                 weiblich
             </button>
-            <button type="button" id="male" class="h-8 flex-1 bg-bg-light rounded-lg focus:outline-none">
+            <button type="button" id="male" class="flex-1 bg-bg-light rounded-lg focus:outline-none">
                 männlich
             </button>
         </div>

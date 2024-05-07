@@ -27,7 +27,7 @@
         } else if (response.status === 401) {
             window.location.href = '/';
         } else if (response.status === 409) {
-            message = "Klasse existiert bereits.";
+            message = "Eine Klasse mit gleichem Namen existiert bereits.";
         } else {
             console.error('Failed to create class.');
         }

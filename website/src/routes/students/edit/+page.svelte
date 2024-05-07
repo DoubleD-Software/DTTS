@@ -36,11 +36,6 @@
 
         if (response.ok) {
             student = await response.json();
-            if (student.gender === 1) {
-                document.getElementById("female").classList.add('bg-select-gray');
-            } else {
-                document.getElementById("male").classList.add('bg-select-gray');
-            }
             document.getElementById("class").value = classesReversed[student.class];
             document.getElementById("name").value = student.name;
         } else if (response.status === 401) {
@@ -55,7 +50,6 @@
     async function save() {
         const updatedStudent = {
             name: document.getElementById("name").value,
-            gender: document.querySelector('.bg-select-gray').id === "female" ? 1 : 0,
             class_id: parseInt(document.getElementById("class").value)
         };
 
@@ -76,7 +70,7 @@
         } else if (response.status === 401) {
             window.location.href = '/';
         } else if (response.status === 409) {
-            message = "Schüler existiert bereits in dieser Klasse.";
+            message = "Ein Schüler mit gleichem Namen existiert bereits in dieser Klasse.";
         } else {
             console.error('Failed to update student.');
         }
@@ -88,28 +82,10 @@
         }
         await fetchClasses();
         await getStudent();
-        const buttons = document.querySelectorAll('button');
-        buttons.forEach(button => {
-            button.addEventListener('click', function () {
-                buttons.forEach(btn => btn.classList.remove('bg-select-gray'));
-                this.classList.add('bg-select-gray');
-            });
-        });
     });
 </script>
 
 <div class="p-5 text-white">
-    <div class="mb-4">
-        <p class="block text-xl mb-1 text-tx-gray">Geschlecht</p>
-        <div class="flex gap-2">
-            <button type="button" id="female" class="female h-8 flex-1 bg-bg-light rounded-lg focus:outline-none">
-                weiblich
-            </button>
-            <button type="button" id="male" class="h-8 flex-1 bg-bg-light rounded-lg focus:outline-none">
-                männlich
-            </button>
-        </div>
-    </div>
     <div class="mb-4">
         <p class="block mb-1 text-xl text-tx-gray">Klasse</p>
         <select id="class" class="input-tx">

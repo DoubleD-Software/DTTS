@@ -41,20 +41,19 @@
             return;
         }
 
-        const response = await fetch(`${PUBLIC_API_URL}/classes`, {
-            method: 'PUT',
+        const response = await fetch(`${PUBLIC_API_URL}/classes?id=${classId}`, {
+            method: 'PATCH',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(newStudent),
             credentials: 'include'
         });
 
         if (response.ok) {
-            const data = await response.json();
-            window.location.href = '/classes/view?id=' + data.id;
+            window.location.href = '/classes/view?id=' + classId;
         } else if (response.status === 401) {
             window.location.href = '/';
         } else if (response.status === 409) {
-            message = "Klasse existiert bereits.";
+            message = "Eine Klasse mit gleichem Namen existiert bereits.";
         } else {
             console.error('Failed to create class.');
         }
@@ -78,7 +77,7 @@
     <p class="text-warn-red pt-1">{message}</p>
 </div>
 <div class="absolute inset-x-0 bottom-0 p-5">
-    <button on:click={save} class="confirm-btn"><span class="btn-label">Hinzufügen</span><span aria-hidden="true"
+    <button on:click={save} class="confirm-btn"><span class="btn-label">Speichern</span><span aria-hidden="true"
                                                                                                class="btn-icon"><ArrowRight/></span>
     </button>
 </div>
