@@ -10,6 +10,8 @@
     import ClassIcon from "$lib/icons/ClassIcon.svelte";
     import SprintIcon from "$lib/icons/SprintIcon.svelte";
     import LapRunIcon from "$lib/icons/LapRunIcon.svelte";
+    import Woman from "$lib/icons/Woman.svelte";
+    import Man from "$lib/icons/Man.svelte";
 
     let id = new URLSearchParams(window.location.search).get('id');
     let type = 0;
@@ -89,22 +91,31 @@
     </button>
 
     {#if gradingKey !== null}
-        <div class="text-white flex-row pb-2 text-lg">
-            <div class="fill-white flex w-full justify-center">
-                <div class="scale-150 pt-1 pr-2">
+        <div class="text-white pb-2 text-lg">
+            <div class="fill-white flex w-full justify-center items-center">
+                <div class="scale-125 pr-3">
+                    {#if gradingKey.gender === 1}
+                        <Woman />
+                    {:else}
+                        <Man />
+                    {/if}
+                </div>
+                <div class="scale-150 pr-3">
                     {#if gradingKey.type === 1}
                         <LapRunIcon />
                     {:else}
                         <SprintIcon />
                     {/if}
                 </div>
-                <p id="name" class="text-3xl ml-2 font-semibold text-center">{gradingKey.name}</p>
-                <a href="/gradingkeys/edit?id={id}" class="scale-80 fill-white pt-1 pl-2">
-                    <EditIcon/>
-                </a>
+                <p id="name" class="text-3xl font-semibold text-center">{gradingKey.name}</p>
             </div>
         </div>
-        <p id="length" class="text-2xl ml-2 text-tx-gray text-center">{gradingKey.length}m</p>
+        <div class="flex justify-center fill-tx-gray items-start">
+            <p id="length" class="text-2xl text-center pr-3">{gradingKey.length}m</p>
+            <a href="/gradingkeys/edit?id={id}" class="scale-80 fill-white">
+                <EditIcon/>
+            </a>
+        </div>
         <p class="block text-2xl mb-1 mt-4 text-white font-semibold text-center">Noten</p>
         <div class="max-w-4xl mx-auto">
             <table class="w-full text-white">

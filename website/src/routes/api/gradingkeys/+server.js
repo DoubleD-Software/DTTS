@@ -11,6 +11,7 @@ export async function GET({url}) {
             {
                 "name": "8 Sprint",
                 "type": 0,
+                "gender": 1,
                 "length": 75,
                 "grades": {
                     "1.00": 10600,
@@ -41,12 +42,14 @@ export async function GET({url}) {
             "0": {
                 "name": "8 Sprint",
                 "type": 0,
+                "gender": 0,
                 "min_time": 12270,
                 "length": 100
             },
             "1": {
                 "name": "8 Rundenlauf",
                 "type": 1,
+                "gender": 1,
                 "min_time": 1009000,
                 "length": 3500
             }

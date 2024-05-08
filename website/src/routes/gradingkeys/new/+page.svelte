@@ -8,6 +8,7 @@
     let message = "";
 
     let type = 0;
+    let gender = 0;
     let grades = Array.from({ length: 21 }, (_, i) => (1 + i * 0.25).toFixed(2));
     let entries = grades.map(grade => ({ grade, time: 0 }));
     let showModal = false;
@@ -28,6 +29,10 @@
         entries = grades.map(grade => ({ grade, time: 0 }));
     }
 
+    function toggleGender() {
+        gender = gender === 0 ? 1 : 0;
+    }
+
     async function save() {
         if (!entries.every(entry => entry.time > 0)) {
             message = "Bitte geben Sie gültige Zeiten für alle Noten an.";
@@ -41,6 +46,7 @@
             name: document.getElementById("name").value,
             type: document.querySelector('.bg-select-gray').id === "lap_run" ? 1 : 0,
             length: parseInt(document.getElementById("length").value),
+            gender: gender,
             grades: gradesObject
         };
 
@@ -71,11 +77,6 @@
             console.error('Failed to create student.');
         }
     }
-
-    onMount(async () => {
-        document.getElementById("sprint").classList.add('bg-select-gray');
-        type = 0;
-    });
 </script>
 
 {#if showModal}
@@ -98,6 +99,21 @@
                     class="flex-1 selector bg-bg-light rounded-lg focus:outline-none {type === 0 ? 'bg-select-gray' : ''}"
                     on:click={() => toggleType()}>
                 Sprint
+            </button>
+        </div>
+    </div>
+    <div class="mb-4">
+        <p class="block text-xl mb-1 text-tx-gray">Geschlecht</p>
+        <div class="flex gap-2 h-[2.5rem] text-xl">
+            <button type="button" id="female"
+                    class="flex-1 selector bg-bg-light rounded-lg focus:outline-none {gender === 1 ? 'bg-select-gray' : ''}"
+                    on:click={() => toggleGender()}>
+                weiblich
+            </button>
+            <button type="button" id="male"
+                    class="flex-1 selector bg-bg-light rounded-lg focus:outline-none {gender === 0 ? 'bg-select-gray' : ''}"
+                    on:click={() => toggleGender()}>
+                männlich
             </button>
         </div>
     </div>

@@ -5,6 +5,8 @@
     import {formatDate, formatTime, julianToDate} from "$lib/util.js";
     import SprintIcon from "$lib/icons/SprintIcon.svelte";
     import LapRunIcon from "$lib/icons/LapRunIcon.svelte";
+    import Woman from "$lib/icons/Woman.svelte";
+    import Man from "$lib/icons/Man.svelte";
 
     let gradingKeys = [];
 
@@ -35,15 +37,22 @@
     {#each gradingKeys as [id, gradingKey]}
         <a href="/gradingkeys/view?id={id}"
            class="fill-white flex items-center mb-2 last:mb-0 bg-bg-lightest p-2 rounded-lg">
+            <div class="fill-tx-gray mr-1">
+                {#if gradingKey.gender === 1}
+                    <Woman />
+                {:else}
+                    <Man />
+                {/if}
+            </div>
             {#if gradingKey.type === 1}
                 <LapRunIcon />
             {:else}
                 <SprintIcon />
             {/if}
             <p class="ml-3 text-lg">{gradingKey.name}</p>
-            <div class="absolute left-[50%] right-8 flex items-baseline">
-                <p class="flex-1 text-tx-gray ml-3 text-center">{formatTime(gradingKey.min_time, gradingKey.type)}</p>
-                <p class="flex-1 text-right text-lg font-bold">{gradingKey.length}m</p>
+            <div class="absolute left-[55%] right-8 flex items-baseline justify-between">
+                <p class="text-tx-gray ml-3 text-center">{formatTime(gradingKey.min_time, gradingKey.type)}</p>
+                <p class="text-right text-lg font-bold">{gradingKey.length}m</p>
             </div>
         </a>
     {/each}
