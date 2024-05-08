@@ -20,6 +20,10 @@ class DTTSRestApi {
         void deleteGradingKey(AsyncWebServerRequest *request);
         void putGradingKey(AsyncWebServerRequest *request, String data);
         void patchGradingKey(AsyncWebServerRequest *request, String data);
+        void getClasses(AsyncWebServerRequest *request);
+        void deleteClass(AsyncWebServerRequest *request);
+        void putClass(AsyncWebServerRequest *request, String data);
+        void patchClass(AsyncWebServerRequest *request, String data);
         
     private:
         Database *db;

@@ -59,9 +59,11 @@ void DTTSRestApi::getRun(AsyncWebServerRequest *request) {
             doc["avg_grade"] = String(run_info.avg_grade, 2);
             doc["avg_time"] = run_info.avg_time;
             for (int i = 0; i < run_info.students.size(); i++) {
-                String index = String(i);
+                String index = String(run_info.students[i].student_id);
                 doc["students"][index]["name"] = run_info.students[i].name;
                 doc["students"][index]["grade"] = String(run_info.students[i].grade, 2);
+                doc["students"][index]["time"] = run_info.students[i].time;
+                doc["students"][index]["gender"] = run_info.students[i].gender;
             }
         }
     } else {
@@ -400,4 +402,126 @@ void DTTSRestApi::patchGradingKey(AsyncWebServerRequest *request, String data) {
         }
     }
     request->send(request_result, "application/json", "{}");
+}
+
+void DTTSRestApi::getClasses(AsyncWebServerRequest *request) {
+    int request_result = 200;
+    JsonDocument doc;
+
+    if (request->hasParam("id")) {
+        int class_id = request->getParam("id")->value().toInt();
+        ClassInfo class_info = db->getClassInfo(class_id);
+        if (class_info.name == "") {
+            request_result = 404;
+        } else {
+            doc["name"] = class_info.name;
+            doc["sprint"]["avg_grade"] = String(class_info.sprint_avg_grade, 2);
+            doc["sprint"]["avg_time"] = class_info.sprint_avg_time;
+            doc["lap_run"]["avg_grade"] = String(class_info.lap_run_avg_grade, 2);
+            doc["lap_run"]["avg_time"] = class_info.lap_run_avg_time;
+            for (int i = 0; i < class_info.runs.size(); i++) {
+                String index = String(class_info.runs[i].run_id);
+                doc["runs"][index]["type"] = class_info.runs[i].type;
+                doc["runs"][index]["length"] = class_info.runs[i].length;
+                doc["runs"][index]["avg_grade"] = String(class_info.runs[i].avg_grade, 2);
+                doc["runs"][index]["avg_time"] = class_info.runs[i].avg_time;
+                doc["runs"][index]["date"] = class_info.runs[i].date;
+            }
+            for (int i = 0; i < class_info.students.size(); i++) {
+                String index = String(class_info.students[i].student_id);
+                doc["students"][index]["name"] = class_info.students[i].name;
+                doc["students"][index]["gender"] = class_info.students[i].gender;
+                doc["students"][index]["avg_grade"] = String(class_info.students[i].avg_grade, 2);
+            }
+        }
+    } else {
+        std::vector<ClassInfoSimple> classes = db->getClasses();
+        for (int i = 0; i < classes.size(); i++) {
+            String index = String(classes[i].class_id);
+            doc[index]["name"] = classes[i].name;
+            doc[index]["size"] = classes[i].size;
+            doc[index]["sprint"]["avg_grade"] = String(classes[i].sprint_avg_grade, 2);
+            doc[index]["sprint"]["avg_time"] = classes[i].sprint_avg_time;
+            doc[index]["lap_run"]["avg_grade"] = String(classes[i].lap_run_avg_grade, 2);
+            doc[index]["lap_run"]["avg_time"] = classes[i].lap_run_avg_time;
+        }
+    }
+
+    String json_output;
+    serializeJson(doc, json_output);
+    request->send(request_result, "application/json", json_output);
+}
+
+void DTTSRestApi::deleteClass(AsyncWebServerRequest *request) {
+    int request_result = 200;
+
+    if (request->hasParam("id")) {
+        int class_id = request->getParam("id")->value().toInt();
+        if (db->deleteClass(class_id)) {
+            request_result = 404;
+        }
+    } else {
+        request_result = 400;
+    }
+
+    request->send(request_result, "application/json", "{}");
+}
+
+void DTTSRestApi::putClass(AsyncWebServerRequest *request, String data) {
+    int request_result = 201;
+    JsonDocument doc;
+    deserializeJson(doc, data);
+    if (doc.isNull()) {
+        request_result = 400;
+        doc.clear();
+    } else {
+        if (doc.containsKey("name")) {
+            String name = doc["name"];
+            doc.clear();
+
+            int class_id = db->putClass(name);
+            if (class_id == DB_FAILED) {
+                request_result = 500;
+            } else if (class_id == DB_CONFLICT) {
+                request_result = 409;
+            } else if (class_id == DB_NOT_FOUND) {
+                request_result = 400;
+            } else {
+                doc["id"] = class_id;
+            }
+        } else {
+            doc.clear();
+            request_result = 400;
+        }
+    }
+    String json_output;
+    serializeJson(doc, json_output);
+    request->send(request_result, "application/json", json_output);   
+}
+
+void DTTSRestApi::patchClass(AsyncWebServerRequest *request, String data) {
+    int request_result = 200;
+    JsonDocument doc;
+    deserializeJson(doc, data);
+    if (doc.isNull()) {
+        request_result = 400;
+    } else {
+        if (request->hasArg("id") && doc.containsKey("name")) {
+            int result;
+            int id = request->getParam("id")->value().toInt();
+            String name = doc["name"].as<String>();
+
+            result = db->patchClass(id, name);
+            if (result == DB_FAILED) {
+                request_result = 500;
+            } else if (result == DB_CONFLICT) {
+                request_result = 409;
+            } else if (result == DB_NOT_FOUND) {
+                request_result = 404;
+            }
+        } else {
+            request_result = 400;
+        }
+    }
+    request->send(request_result, "application/json", "{}");   
 }

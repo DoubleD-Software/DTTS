@@ -57,6 +57,7 @@ typedef struct {
     String name;
     int time = 0;
     float grade = 0;
+    int gender = 0;
 } RunInfoStudent;
 
 typedef struct {
@@ -108,35 +109,72 @@ typedef struct {
 
 typedef struct {
     String name;
-    int type;
-    int min_time;
-    int length;
-    int gender;
-    int id;
+    int type = 0;
+    int min_time = 0;
+    int length = 0;
+    int gender = 0;
+    int id = 0;
 } GradingKeySimple;
 
 typedef struct {
-    float grade;
-    int time;
+    float grade = 0;
+    int time = 0;
 } GradingKeyGrade;
 
 typedef struct {
     String name;
-    int type;
-    int length;
-    int gender;
+    int type = 0;
+    int length = 0;
+    int gender = 0;
     std::vector<GradingKeyGrade> grades;
 } GradingKey;
 
 typedef struct {
     String name;
-    int id;
+    int id = 0;
 } GradingKeyIdMap;
 
 typedef struct {
     std::vector<GradingKeyIdMap> males;
     std::vector<GradingKeyIdMap> females;
 } GradingKeyMap;
+
+typedef struct {
+    int class_id = 0;
+    String name;
+    int size = 0;
+    float sprint_avg_grade = 0;
+    int sprint_avg_time = 0;
+    float lap_run_avg_grade = 0;
+    int lap_run_avg_time = 0;
+} ClassInfoSimple;
+
+typedef struct {
+    int run_id = 0;
+    int type = 0;
+    int length = 0;
+    int date = 0;
+    float avg_grade = 0;
+    float avg_time = 0;
+} ClassInfoRun;
+
+typedef struct {
+    int student_id = 0;
+    String name;
+    int gender;
+    float avg_grade = 0;
+} ClassInfoStudent;
+
+typedef struct {
+    String name;
+    float global_avg_grade = 0;
+    float sprint_avg_grade = 0;
+    int sprint_avg_time = 0;
+    float lap_run_avg_grade = 0;
+    int lap_run_avg_time = 0;
+    std::vector<ClassInfoRun> runs;
+    std::vector<ClassInfoStudent> students;
+} ClassInfo;
 
 class Database {
     public:
@@ -159,6 +197,11 @@ class Database {
         int deleteGradingKey(int grading_key_id);
         int putGradingKey(String name, int type, int length, int gender, std::vector<GradingKeyGrade> grades);
         int patchGradingKey(int id, String name, int length, std::vector<GradingKeyGrade> grades);
+        std::vector<ClassInfoSimple> getClasses();
+        ClassInfo getClassInfo(int class_id);
+        int deleteClass(int class_id);
+        int putClass(String name);
+        int patchClass(int id, String name);
 
     private:
         void createTables();
