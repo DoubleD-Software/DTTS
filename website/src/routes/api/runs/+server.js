@@ -18,7 +18,7 @@ export async function GET({url}) {
                     "length": 100,
                     "teacher": "Hr. Schwarzenegger",
                     "class": "9y",
-                    "avg_grade": "2,75",
+                    "avg_grade": "2.75",
                     "avg_time": 14900
                 },
                 "2": {
@@ -26,7 +26,7 @@ export async function GET({url}) {
                     "length": 3200,
                     "teacher": "Hr. Schwarzenegger",
                     "class": "9y",
-                    "avg_grade": "2,25",
+                    "avg_grade": "2.25",
                     "avg_time": 1024000
                 }
             });
@@ -41,7 +41,7 @@ export async function GET({url}) {
             {
                 "name": "Bali Schmidt",
                 "time": 770000,
-                "grade": "2,00",
+                "grade": "2.00",
                 "length": 750,
                 "rounds": {
                     "1": {
@@ -72,20 +72,20 @@ export async function GET({url}) {
                     "class": "9y",
                     "grading_key_male": "9 Rundenlauf (m)",
                     "grading_key_female": "9 Rundenlauf (w)",
-                    "avg_grade": "2,75",
+                    "avg_grade": "2.75",
                     "avg_time": 770000,
                     "students": {
                         "7": {
                             "name": "Bali Schmidt",
                             "time": 770000,
                             "gender": 0,
-                            "grade": "2,00"
+                            "grade": "2.00"
                         },
                         "10": {
                             "name": "Ali Baba",
                             "time": 780000,
                             "gender": 1,
-                            "grade": "3,90"
+                            "grade": "3.90"
                         }
                     }
                 });
@@ -99,18 +99,18 @@ export async function GET({url}) {
                 "class": "9y",
                 "grading_key_male": "9 Sprint (m)",
                 "grading_key_female": "9 Sprint (w)",
-                "avg_grade": "2,75",
+                "avg_grade": "2.75",
                 "avg_time": 14900,
                 "students": {
                     "7": {
                         "name": "Bali Schmidt",
                         "time": 14200,
-                        "grade": "2,00"
+                        "grade": "2.00"
                     },
                     "10": {
                         "name": "Ali Baba",
                         "time": 16200,
-                        "grade": "3,90"
+                        "grade": "3.90"
                     }
                 }
             });

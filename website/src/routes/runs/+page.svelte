@@ -1,6 +1,6 @@
 <script>
-    import { dateToJulian } from "$lib/util.js";
-    import { PUBLIC_API_URL } from "$env/static/public";
+    import {dateToJulian} from "$lib/util.js";
+    import {PUBLIC_API_URL} from "$env/static/public";
     import DateSelector from "$lib/components/DateSelector.svelte";
     import RunListEntry from "$lib/components/RunListEntry.svelte";
 
@@ -34,11 +34,12 @@
     }
 </script>
 
-<DateSelector on:dateChange={handleDateChange} />
+<DateSelector on:dateChange={handleDateChange}/>
 <div class="m-3 text-white">
     {#each runs as [id, run]}
         <a href="/runs/view?id={id}">
-            <RunListEntry type={run.type} length={run.length} teacher={run.teacher} runClass={run.class} avgTime={run.avg_time} avgGrade={run.avg_grade} />
+            <RunListEntry type={run.type} length={run.length} teacher={run.teacher} runClass={run.class}
+                          avgTime={run.avg_time} avgGrade={run.avg_grade.replace('.', ',')}/>
         </a>
     {/each}
     {#if runs.length === 0}

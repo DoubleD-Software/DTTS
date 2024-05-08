@@ -32,8 +32,8 @@
 <div class="m-3 text-white">
     {#each classes as [id, classEntry]}
         <a href="/classes/view?id={id}">
-            <ClassListEntry name={classEntry.name} size={classEntry.size} sprintAvgGrade={classEntry.sprint.avg_grade}
-                            sprintAvgTime={classEntry.sprint.avg_time} lapRunAvgGrade={classEntry.lap_run.avg_grade}
+            <ClassListEntry name={classEntry.name} size={classEntry.size} sprintAvgGrade={classEntry.sprint.avg_grade.replace('.', ',')}
+                            sprintAvgTime={classEntry.sprint.avg_time} lapRunAvgGrade={classEntry.lap_run.avg_grade.replace('.', ',')}
                             lapRunAvgTime={classEntry.lap_run.avg_time}/>
         </a>
     {/each}

@@ -17,25 +17,25 @@ export async function GET({url}) {
                 "name": "8o",
                 "global_avg_grade": "3,30",
                 "sprint": {
-                    "avg_grade": "2,75",
+                    "avg_grade": "2.75",
                     "avg_time": 14900
                 },
                 "lap_run": {
-                    "avg_grade": "3,90",
+                    "avg_grade": "3.90",
                     "avg_time": 1187000
                 },
                 "runs": {
                     "0": {
                         "type": 0,
                         "length": 100,
-                        "avg_grade": "2,75",
+                        "avg_grade": "2.75",
                         "avg_time": 14900,
                         "date": 2460645
                     },
                     "1": {
                         "type": 1,
                         "length": 3500,
-                        "avg_grade": "3,90",
+                        "avg_grade": "3.90",
                         "avg_time": 1187000,
                         "date": 2460620
                     }
@@ -44,12 +44,12 @@ export async function GET({url}) {
                     "0": {
                         "name": "Bali Schmidt",
                         "gender": 0,
-                        "avg_grade": "2,00"
+                        "avg_grade": "2.00"
                     },
                     "1": {
                         "name": "Ali Baba",
                         "gender": 1,
-                        "avg_grade": "3,90"
+                        "avg_grade": "3.90"
                     }
                 }
             });
@@ -60,11 +60,11 @@ export async function GET({url}) {
                     "name": "8o",
                     "size": 23,
                     "sprint": {
-                        "avg_grade": "2,75",
+                        "avg_grade": "2.75",
                         "avg_time": 14900
                     },
                     "lap_run": {
-                        "avg_grade": "3,90",
+                        "avg_grade": "3.90",
                         "avg_time": 1187000
                     }
                 }

@@ -87,16 +87,16 @@
             </div>
             <p class="mt-2 font-bold">Sprints</p>
             <div class="flex-row flex font-bold">
-                <p><span class="text-tx-gray font-normal">Ø-Note:</span> {student.sprint.avg_grade}</p>
+                <p><span class="text-tx-gray font-normal">Ø-Note:</span> {student.sprint.avg_grade.replace('.', ',')}</p>
                 <p class="absolute left-[50%]"><span class="text-tx-gray font-normal">Ø-Zeit:</span> {formatTime(student.sprint.avg_time, 0)}</p>
             </div>
             <p class="mt-2 font-bold">Rundenlauf</p>
             <div class="flex-row flex font-bold">
-                <p><span class="text-tx-gray font-normal">Ø-Note:</span> {student.lap_run.avg_grade}</p>
+                <p><span class="text-tx-gray font-normal">Ø-Note:</span> {student.lap_run.avg_grade.replace('.', ',')}</p>
                 <p class="absolute left-[50%]"><span class="text-tx-gray font-normal">Ø-Zeit:</span> {formatTime(student.lap_run.avg_time, 1)}</p>
             </div>
             <p class="mt-2 font-bold">Gesamt</p>
-            <p class="font-bold"><span class="text-tx-gray font-normal">Ø-Note:</span> {student.global_avg_grade}</p>
+            <p class="font-bold"><span class="text-tx-gray font-normal">Ø-Note:</span> {student.global_avg_grade.replace('.', ',')}</p>
         </div>
         <div class="text-3xl text-white font-semibold mt-4 mb-2 text-center">Läufe</div>
         <div class="border-t border-gray-500 pt-3">
@@ -111,7 +111,7 @@
                     <div class="absolute left-[50%] right-8 flex">
                         <p class="flex-1 text-left">{run.length}m</p>
                         <p class="flex-1 ml-3 text-center">{formatTime(run.time, run.type)}</p>
-                        <p class="flex-1 text-right font-bold">{run.grade}</p>
+                        <p class="flex-1 text-right font-bold">{run.grade.replace('.', ',')}</p>
                     </div>
                 </a>
             {/each}

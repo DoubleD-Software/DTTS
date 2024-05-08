@@ -55,7 +55,7 @@
             <p class="absolute left-[50%]"><span class="text-tx-gray font-normal">Länge:</span> {json.length}m</p>
         </div>
         <div class="flex mt-2">
-            <p><span class="text-tx-gray font-normal">Ø-Note:</span> {json.avg_grade}</p>
+            <p><span class="text-tx-gray font-normal">Ø-Note:</span> {json.avg_grade.replace('.', ',')}</p>
             <p class="absolute left-[50%]"><span class="text-tx-gray font-normal">Ø-Zeit:</span> {formatTime(json.avg_time, 1)}</p>
         </div>
         <p class="mt-2"><span class="text-tx-gray font-normal">Lehrer:</span> {json.teacher}</p>
@@ -86,7 +86,7 @@
                 </div>
                 <div class="flex items-center gap-4">
                     <p class="text-tx-gray">{formatTime(student.time, json.type)}</p>
-                    <p class="font-bold text-xl">{student.grade}</p>
+                    <p class="font-bold text-xl">{student.grade.replace('.', ',')}</p>
                 </div>
             </a>
         {/each}

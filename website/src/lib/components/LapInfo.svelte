@@ -9,7 +9,7 @@
     <div class="text-3xl font-semibold mb-2">{json.name}</div>
     <div class="mb-4 font-bold">
         <p><span class="text-tx-gray font-normal">Länge:</span> {json.length}m</p>
-        <p><span class="text-tx-gray font-normal">Note:</span> {json.grade}</p>
+        <p><span class="text-tx-gray font-normal">Note:</span> {json.grade.replace('.', ',')}</p>
         <p><span class="text-tx-gray font-normal">Zeit:</span> {formatTime(json.time, 1)}</p>
     </div>
     <div class="border-t border-gray-500 pt-3">

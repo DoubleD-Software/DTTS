@@ -34,7 +34,7 @@
             return;
         }
         let gradesObject = entries.reduce((obj, entry) => {
-            obj[entry.grade.replace('.', ',')] = entry.time;
+            obj[entry.grade] = entry.time;
             return obj;
         }, {});
         const newGradingKey = {

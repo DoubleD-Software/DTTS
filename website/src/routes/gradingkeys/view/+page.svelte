@@ -47,7 +47,7 @@
             gradingKey = await response.json();
             entries = grades.map(grade => ({
                 grade,
-                time: gradingKey.grades[grade.replace('.', ',')] || 0 // Replace '.' with ',' to match server format and ensure fallback to 0 if undefined
+                time: gradingKey.grades[grade] || 0
             }));
         } else if (response.status === 401) {
             window.location.href = '/';

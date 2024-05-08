@@ -39,7 +39,7 @@
             type = gradingKey.type;
             entries = grades.map(grade => ({
                 grade,
-                time: gradingKey.grades[grade.replace('.', ',')] || 0 // Replace '.' with ',' to match server format and ensure fallback to 0 if undefined
+                time: gradingKey.grades[grade] || 0 // Replace '.' with ',' to match server format and ensure fallback to 0 if undefined
             }));
         } else if (response.status === 401) {
             window.location.href = '/';
@@ -57,7 +57,7 @@
             return;
         }
         let gradesObject = entries.reduce((obj, entry) => {
-            obj[entry.grade.replace('.', ',')] = entry.time;
+            obj[entry.grade] = entry.time;
             return obj;
         }, {});
         const newGradingKey = {

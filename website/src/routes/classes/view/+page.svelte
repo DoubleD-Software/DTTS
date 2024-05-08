@@ -95,18 +95,18 @@
             </div>
             <p class="mt-2 font-bold">Sprints</p>
             <div class="flex-row flex font-bold">
-                <p><span class="text-tx-gray font-normal">Ø-Note:</span> {classEntry.sprint.avg_grade}</p>
+                <p><span class="text-tx-gray font-normal">Ø-Note:</span> {classEntry.sprint.avg_grade.replace('.', ',')}</p>
                 <p class="absolute left-[50%]"><span
                         class="text-tx-gray font-normal">Ø-Zeit:</span> {formatTime(classEntry.sprint.avg_time, 0)}</p>
             </div>
             <p class="mt-2 font-bold">Rundenlauf</p>
             <div class="flex-row flex font-bold">
-                <p><span class="text-tx-gray font-normal">Ø-Note:</span> {classEntry.lap_run.avg_grade}</p>
+                <p><span class="text-tx-gray font-normal">Ø-Note:</span> {classEntry.lap_run.avg_grade.replace('.', ',')}</p>
                 <p class="absolute left-[50%]"><span
                         class="text-tx-gray font-normal">Ø-Zeit:</span> {formatTime(classEntry.lap_run.avg_time, 1)}</p>
             </div>
             <p class="mt-2 font-bold">Gesamt</p>
-            <p class="font-bold"><span class="text-tx-gray font-normal">Ø-Note:</span> {classEntry.global_avg_grade}</p>
+            <p class="font-bold"><span class="text-tx-gray font-normal">Ø-Note:</span> {classEntry.global_avg_grade.replace('.', ',')}</p>
         </div>
         <div class="flex items-baseline">
             <div id="runs"
@@ -135,7 +135,7 @@
                         <div class="absolute left-[50%] right-8 flex items-baseline">
                             <p class="flex-1 text-left">{run.length}m</p>
                             <p class="flex-1 ml-3 text-center">{formatTime(run.avg_time, run.type)}</p>
-                            <p class="flex-1 text-right text-lg font-bold">{run.avg_grade}</p>
+                            <p class="flex-1 text-right text-lg font-bold">{run.avg_grade.replace('.', ',')}</p>
                         </div>
                     </a>
                 {/each}
@@ -150,7 +150,7 @@
                         {/if}
                         <div class="flex w-full justify-between">
                             <p class="ml-2">{student.name}</p>
-                            <p class="font-bold">{student.avg_grade}</p>
+                            <p class="font-bold">{student.avg_grade.replace('.', ',')}</p>
                         </div>
                     </a>
                 {/each}
