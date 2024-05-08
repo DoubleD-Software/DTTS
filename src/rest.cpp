@@ -107,7 +107,8 @@ void DTTSRestApi::putRun(AsyncWebServerRequest *request, String data) {
             int teacher_id = doc["teacher_id"];
             int grading_key_m_id = doc["grading_key_male_id"];
             int grading_key_f_id = doc["grading_key_female_id"];
-            int laps = doc["laps"];
+            String laps_s = doc["laps"];
+            float laps = laps_s.toFloat();
 
             int run_id = db->putRun(type, date, class_id, grading_key_m_id, grading_key_f_id, teacher_id, length, laps, participants);
 
@@ -143,7 +144,7 @@ void DTTSRestApi::getStudent(AsyncWebServerRequest *request) {
             doc["lap_run"]["avg_grade"] = String(student_info.lap_run_avg_grade, 2);
             doc["lap_run"]["avg_time"] = student_info.lap_run_avg_time;
             for (int i = 0; i < student_info.runs.size(); i++) {
-                String index = String(i);
+                String index = String(student_info.runs[i].run_id);
                 doc["runs"][index]["type"] = student_info.runs[i].type;
                 doc["runs"][index]["length"] = student_info.runs[i].length;
                 doc["runs"][index]["grade"] = String(student_info.runs[i].grade, 2);
@@ -216,23 +217,187 @@ void DTTSRestApi::patchStudent(AsyncWebServerRequest *request, String data) {
     if (doc.isNull()) {
         request_result = 400;
     } else {
-        if (doc.containsKey("name") && doc.containsKey("class_id")) {
-            String name = doc["name"];
-            int class_id = doc["class_id"];
+        if (request->hasArg("id") && (doc.containsKey("name") || doc.containsKey("class_id"))) {
+            int result;
+            int id = request->getParam("id")->value().toInt();
+            String name = "";
+            int class_id = -1;
+            if (doc.containsKey("name")) {
+                name = doc["name"].as<String>();
+            }
+            if (doc.containsKey("class_id")) {
+                class_id = doc["class_id"];
+            }
 
-            int result = db->patchStudent(name, class_id);
+            result = db->patchStudent(id, name, class_id);
             if (result == DB_FAILED) {
                 request_result = 500;
             } else if (result == DB_CONFLICT) {
                 request_result = 409;
             } else if (result == DB_NOT_FOUND) {
-                request_result = 400;
+                request_result = 404;
             }
         } else {
             request_result = 400;
         }
     }
+    request->send(request_result, "application/json", "{}");   
+}
+
+void DTTSRestApi::getGradingKeys(AsyncWebServerRequest *request) {
+    int request_result = 200;
+    JsonDocument doc;
+
+    if (request->hasParam("id")) {
+        int grading_key_id = request->getParam("id")->value().toInt();
+        GradingKey grading_key = db->getGradingKey(grading_key_id);
+        if (grading_key.type == -1) {
+            request_result = 404;
+        } else {
+            doc["name"] = grading_key.name;
+            doc["type"] = grading_key.type;
+            doc["length"] = grading_key.length;
+            doc["gender"] = grading_key.gender;
+            for (int i = 0; i < grading_key.grades.size(); i++) {
+                String index = String(grading_key.grades[i].grade);
+                doc["grades"][index] = grading_key.grades[i].time;
+            }
+        }
+    } else if (request->hasParam("type") && request->hasParam("length")) {
+        int type = request->getParam("type")->value().toInt();
+        int length = request->getParam("length")->value().toInt();
+        GradingKeyMap grading_key_map = db->getGradingKeyMap(type, length);
+        for (int i = 0; i < grading_key_map.males.size(); i++) {
+            String index = String(grading_key_map.males[i].id);
+            doc["male"][index] = grading_key_map.males[i].name;
+        }
+        for (int i = 0; i < grading_key_map.females.size(); i++) {
+            String index = String(grading_key_map.females[i].id);
+            doc["female"][index] = grading_key_map.females[i].name;
+        }
+    } else {
+        std::vector<GradingKeySimple> grading_keys = db->getGradingKeys();
+        for (int i = 0; i < grading_keys.size(); i++) {
+            String index = String(grading_keys[i].id);
+            doc[index]["name"] = grading_keys[i].name;
+            doc[index]["type"] = grading_keys[i].type;
+            doc[index]["min_time"] = grading_keys[i].min_time;
+            doc[index]["length"] = grading_keys[i].length;
+            doc[index]["gender"] = grading_keys[i].gender;
+        }
+    }
+
     String json_output;
     serializeJson(doc, json_output);
-    request->send(request_result, "application/json", "{}");   
+    request->send(request_result, "application/json", json_output);
+}
+
+void DTTSRestApi::deleteGradingKey(AsyncWebServerRequest *request) {
+    int request_result = 200;
+
+    if (request->hasParam("id")) {
+        int grading_key_id = request->getParam("id")->value().toInt();
+        if (db->deleteGradingKey(grading_key_id)) {
+            request_result = 404;
+        }
+    } else {
+        request_result = 400;
+    }
+
+    request->send(request_result, "application/json", "{}");
+}
+
+void DTTSRestApi::putGradingKey(AsyncWebServerRequest *request, String data) {
+    int request_result = 201;
+    JsonDocument doc;
+    deserializeJson(doc, data);
+    if (doc.isNull()) {
+        request_result = 400;
+        doc.clear();
+    } else {
+        if (doc.containsKey("name") && doc.containsKey("type") && doc.containsKey("length") && doc.containsKey("gender") && doc.containsKey("grades")) {
+            String name = doc["name"];
+            int type = doc["type"];
+            int length = doc["length"];
+            int gender = doc["gender"];
+            std::vector<GradingKeyGrade> grades;
+            
+            JsonObject grades_obj = doc["grades"];
+            for (JsonPair grade : grades_obj) {
+                GradingKeyGrade grading_key_grade;
+                String grade_key = grade.key().c_str();
+                grading_key_grade.grade = grade_key.toFloat();
+                grading_key_grade.time = grade.value().as<int>();
+                grades.push_back(grading_key_grade);
+            }
+            doc.clear();
+
+            if (grades.size() == 0) {
+                request_result = 400;
+            } else {
+                int grading_key_id = db->putGradingKey(name, type, length, gender, grades);
+                if (grading_key_id == DB_FAILED) {
+                    request_result = 500;
+                } else if (grading_key_id == DB_CONFLICT) {
+                    request_result = 409;
+                } else if (grading_key_id == DB_NOT_FOUND) {
+                    request_result = 400;
+                } else {
+                    doc["id"] = grading_key_id;
+                }
+            }
+        } else {
+            doc.clear();
+            request_result = 400;
+        }
+    }
+    String json_output;
+    serializeJson(doc, json_output);
+    request->send(request_result, "application/json", json_output);   
+}
+
+void DTTSRestApi::patchGradingKey(AsyncWebServerRequest *request, String data) {
+    int request_result = 200;
+    JsonDocument doc;
+    deserializeJson(doc, data);
+    if (doc.isNull()) {
+        request_result = 400;
+    } else {
+        if (request->hasArg("id") && (doc.containsKey("name") || doc.containsKey("length"))) {
+            int result;
+            int id = request->getParam("id")->value().toInt();
+            String name = "";
+            int length = -1;
+            if (doc.containsKey("name")) {
+                name = doc["name"].as<String>();
+            }
+            if (doc.containsKey("length")) {
+                length = doc["length"];
+            }
+
+            std::vector<GradingKeyGrade> grades;
+            if (doc.containsKey("grades")) {
+                JsonObject grades_obj = doc["grades"];
+                for (JsonPair grade : grades_obj) {
+                    GradingKeyGrade grading_key_grade;
+                    String grade_key = grade.key().c_str();
+                    grading_key_grade.grade = grade_key.toFloat();
+                    grading_key_grade.time = grade.value().as<int>();
+                    grades.push_back(grading_key_grade);
+                }
+            }
+
+            result = db->patchGradingKey(id, name, length, grades);
+            if (result == DB_FAILED) {
+                request_result = 500;
+            } else if (result == DB_CONFLICT) {
+                request_result = 409;
+            } else if (result == DB_NOT_FOUND) {
+                request_result = 404;
+            }
+        } else {
+            request_result = 400;
+        }
+    }
+    request->send(request_result, "application/json", "{}");
 }

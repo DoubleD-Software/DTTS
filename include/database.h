@@ -15,8 +15,10 @@
 #define SQL_TYPE_PRIMARY_KEY 0b1
 #define SQL_TYPE_AUTO_INCREMENT 0b10
 #define SQL_TYPE_FOREIGN_KEY 0b100
-#define RUN_TYPE_LAP_RUN 0
-#define RUN_TYPE_SPRINT 1
+#define RUN_TYPE_LAP_RUN 1
+#define RUN_TYPE_SPRINT 0
+#define GENDER_TYPE_MALE 0
+#define GENDER_TYPE_FEMALE 1
 
 #define UNKNOWN_NAME "Unknown"
 #define DB_SUCCESS 0
@@ -90,6 +92,7 @@ typedef struct {
     float grade = 0;
     int time = 0;
     int date = 0;
+    int run_id = 0;
 } StudentInfoRun;
 
 typedef struct {
@@ -103,6 +106,38 @@ typedef struct {
     std::vector<StudentInfoRun> runs;
 } StudentInfo;
 
+typedef struct {
+    String name;
+    int type;
+    int min_time;
+    int length;
+    int gender;
+    int id;
+} GradingKeySimple;
+
+typedef struct {
+    float grade;
+    int time;
+} GradingKeyGrade;
+
+typedef struct {
+    String name;
+    int type;
+    int length;
+    int gender;
+    std::vector<GradingKeyGrade> grades;
+} GradingKey;
+
+typedef struct {
+    String name;
+    int id;
+} GradingKeyIdMap;
+
+typedef struct {
+    std::vector<GradingKeyIdMap> males;
+    std::vector<GradingKeyIdMap> females;
+} GradingKeyMap;
+
 class Database {
     public:
         Database(String db_path);
@@ -113,12 +148,17 @@ class Database {
         RunInfoSpecific getRunInfo(int run_id);
         RunInfoStudentLaps getRunInfoStudent(int run_id, int student_id);
         int deleteRun(int run_id);
-        int putRun(int type, int date, int class_id, int grading_key_m_id, int grading_key_f_id, int teacher_id, int length, int laps, std::vector<int> participants);
+        int putRun(int type, int date, int class_id, int grading_key_m_id, int grading_key_f_id, int teacher_id, int length, float laps, std::vector<int> participants);
         StudentInfo getStudentInfo(int student_id);
         int deleteStudent(int student_id);
-        int putStudent(String student_name, int gender, int class_id);
-        int patchStudent(String student_name, int class_id);
-        
+        int putStudent(String name, int gender, int class_id);
+        int patchStudent(int id, String name, int class_id);
+        std::vector<GradingKeySimple> getGradingKeys();
+        GradingKey getGradingKey(int grading_key_id);
+        GradingKeyMap getGradingKeyMap(int type, int length);
+        int deleteGradingKey(int grading_key_id);
+        int putGradingKey(String name, int type, int length, int gender, std::vector<GradingKeyGrade> grades);
+        int patchGradingKey(int id, String name, int length, std::vector<GradingKeyGrade> grades);
 
     private:
         void createTables();

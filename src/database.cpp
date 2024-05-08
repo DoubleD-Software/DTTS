@@ -10,15 +10,21 @@ const SqlTable Database::TABLES[] = {
     }),
     SqlTable("classes", {
         SqlColumn("id", SQL_TYPE_INT, SQL_TYPE_PRIMARY_KEY | SQL_TYPE_AUTO_INCREMENT),
-        SqlColumn("name", SQL_TYPE_TEXT)
+        SqlColumn("name", SQL_TYPE_TEXT),
+        SqlColumn("sprint_avg_grade", SQL_TYPE_REAL),
+        SqlColumn("sprint_avg_time", SQL_TYPE_INT),
+        SqlColumn("lap_run_avg_grade", SQL_TYPE_REAL),
+        SqlColumn("lap_run_avg_time", SQL_TYPE_INT)
     }),
     SqlTable("grading_keys", {
         SqlColumn("id", SQL_TYPE_INT, SQL_TYPE_PRIMARY_KEY | SQL_TYPE_AUTO_INCREMENT),
         SqlColumn("name", SQL_TYPE_TEXT),
-        SqlColumn("type", SQL_TYPE_INT)
+        SqlColumn("type", SQL_TYPE_INT),
+        SqlColumn("length", SQL_TYPE_INT),
+        SqlColumn("gender", SQL_TYPE_INT)
     }),
     SqlTable("grading_keys_grades", {
-        SqlColumn("grading_key_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY | SQL_TYPE_PRIMARY_KEY, "grading_keys", "id"),
+        SqlColumn("grading_key_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "grading_keys", "id"),
         SqlColumn("time", SQL_TYPE_INT),
         SqlColumn("grade", SQL_TYPE_REAL)
     }),
@@ -426,8 +432,8 @@ int Database::deleteRun(int run_id) {
     return DB_SUCCESS;
 }
 
-int Database::putRun(int type, int date, int class_id, int grading_key_m_id, int grading_key_f_id, int teacher_id, int length, int laps, std::vector<int> participants) {
-    String sql = "INSERT INTO runs (type, date, class_id, grading_key_m_id, grading_key_f_id, teacher_id, length, laps) VALUES (" + String(type) + ", " + String(date) + ", " + String(class_id) + ", " + String(grading_key_m_id) + ", " + String(grading_key_f_id) + ", " + String(teacher_id) + ", " + String(length) + ", " + String(laps) + ");";
+int Database::putRun(int type, int date, int class_id, int grading_key_m_id, int grading_key_f_id, int teacher_id, int length, float laps, std::vector<int> participants) {
+    String sql = "INSERT INTO runs (type, date, class_id, grading_key_m_id, grading_key_f_id, teacher_id, length, laps) VALUES (" + String(type) + ", " + String(date) + ", " + String(class_id) + ", " + String(grading_key_m_id) + ", " + String(grading_key_f_id) + ", " + String(teacher_id) + ", " + String(length) + ", " + String(laps, 2) + ");";
     if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
         DEBUG_SER_PRINT("Failed to insert run: ");
         DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
@@ -532,6 +538,7 @@ StudentInfo Database::getStudentInfo(int student_id) {
         while (sqlite3_step(run_stmt) == SQLITE_ROW) {
             StudentInfoRun run;
 
+            run.run_id = sqlite3_column_int(run_stmt, 0);
             run.type = sqlite3_column_int(run_stmt, 1);
             run.length = sqlite3_column_int(run_stmt, 7);
             run.date = sqlite3_column_int(run_stmt, 2);
@@ -615,8 +622,8 @@ int Database::putStudent(String name, int gender, int class_id) {
     return student_id;
 }
 
-int Database::patchStudent(String name, int class_id) {
-    String sql = "SELECT id FROM students WHERE name = '" + name + "';";
+int Database::patchStudent(int id, String name, int class_id) {
+    String sql = "SELECT * FROM students WHERE id = '" + String(id) + "';";
 
     sqlite3_stmt* student_stmt;
     if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &student_stmt, 0) != SQLITE_OK) {
@@ -631,7 +638,7 @@ int Database::patchStudent(String name, int class_id) {
     }
     sqlite3_finalize(student_stmt);
 
-    sql = "SELECT id FROM students WHERE name = '" + name + "' AND class_id = " + String(class_id) + ";";
+    sql = "SELECT * FROM students WHERE name = '" + name + "' AND class_id = " + String(class_id) + ";";
     if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &student_stmt, 0) != SQLITE_OK) {
         DEBUG_SER_PRINT("Failed to prepare statement: ");
         DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
@@ -644,12 +651,273 @@ int Database::patchStudent(String name, int class_id) {
     }
     sqlite3_finalize(student_stmt);
 
-    sql = "UPDATE students SET class_id = " + String(class_id) + " WHERE name = '" + name + "';";
+    sql = "UPDATE students SET ";
+    if (name != "") {
+        sql += "name = '" + name + "'";
+    }
+    if (class_id != -1) {
+        if (name != "") {
+            sql += ", ";
+        }
+        sql += "class_id = " + String(class_id);
+    }
+    sql += " WHERE id = " + String(id) + ";";
     if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
         DEBUG_SER_PRINT("Failed to update student: ");
         DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
         return DB_FAILED;
     }
-    return DB_SUCCESS;    
+    return DB_SUCCESS;
+}
 
+std::vector<GradingKeySimple> Database::getGradingKeys() {
+    std::vector<GradingKeySimple> grading_keys;
+
+    String sql = "SELECT * FROM grading_keys;";
+
+    sqlite3_stmt* grading_key_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &grading_key_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(grading_key_stmt);
+        return grading_keys;
+    }
+    while(sqlite3_step(grading_key_stmt) == SQLITE_ROW) {
+        GradingKeySimple grading_key;
+        grading_key.name = String((const char*) sqlite3_column_text(grading_key_stmt, 1));
+        grading_key.type = sqlite3_column_int(grading_key_stmt, 2);
+        grading_key.length = sqlite3_column_int(grading_key_stmt, 3);
+        grading_key.gender = sqlite3_column_int(grading_key_stmt, 4);
+        grading_key.id = sqlite3_column_int(grading_key_stmt, 0);
+
+        String grading_key_grades_sql = "SELECT * FROM grading_keys_grades WHERE grading_key_id = " + String(grading_key.id) + ";";
+        sqlite3_stmt* grading_key_grades_stmt;
+        if (sqlite3_prepare_v2(this->db, grading_key_grades_sql.c_str(), -1, &grading_key_grades_stmt, 0) != SQLITE_OK) {
+            DEBUG_SER_PRINT("Failed to prepare statement: ");
+            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+            sqlite3_finalize(grading_key_grades_stmt);
+            break;
+        }
+        int min_time = INT32_MAX;
+        while(sqlite3_step(grading_key_grades_stmt) == SQLITE_ROW) {
+            if (sqlite3_column_int(grading_key_grades_stmt, 1) < min_time) {
+                min_time = sqlite3_column_int(grading_key_grades_stmt, 1);
+            }
+        }
+        sqlite3_finalize(grading_key_grades_stmt);
+        grading_key.min_time = min_time;
+
+        grading_keys.push_back(grading_key);
+    }
+
+    sqlite3_finalize(grading_key_stmt);
+    return grading_keys;
+}
+
+GradingKey Database::getGradingKey(int grading_key_id) {
+    GradingKey grading_key;
+    grading_key.type = -1;
+
+    String sql = "SELECT * FROM grading_keys WHERE id = " + String(grading_key_id) + ";";
+    sqlite3_stmt* grading_key_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &grading_key_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(grading_key_stmt);
+        return grading_key;
+    }
+    if (sqlite3_step(grading_key_stmt) != SQLITE_ROW) {
+        sqlite3_finalize(grading_key_stmt);
+        return grading_key;
+    }
+
+    grading_key.name = String((const char*) sqlite3_column_text(grading_key_stmt, 1));
+    grading_key.type = sqlite3_column_int(grading_key_stmt, 2);
+    grading_key.length = sqlite3_column_int(grading_key_stmt, 3);
+    grading_key.gender = sqlite3_column_int(grading_key_stmt, 4);
+    sqlite3_finalize(grading_key_stmt);
+
+    sql = "SELECT * FROM grading_keys_grades WHERE grading_key_id = " + String(grading_key_id) + ";";
+    sqlite3_stmt* grading_key_grades_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &grading_key_grades_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(grading_key_grades_stmt);
+        return grading_key;
+    }
+
+    while (sqlite3_step(grading_key_grades_stmt) == SQLITE_ROW) {
+        GradingKeyGrade grade;
+        grade.time = sqlite3_column_int(grading_key_grades_stmt, 1);
+        grade.grade = sqlite3_column_double(grading_key_grades_stmt, 2);
+        grading_key.grades.push_back(grade);
+    }
+
+    sqlite3_finalize(grading_key_grades_stmt);
+    return grading_key;
+}
+
+GradingKeyMap Database::getGradingKeyMap(int type, int length) {
+    GradingKeyMap grading_key_map;
+
+    String sql = "SELECT * FROM grading_keys WHERE type = " + String(type) + " AND length = " + String(length) + ";";
+    sqlite3_stmt* grading_key_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &grading_key_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(grading_key_stmt);
+        return grading_key_map;
+    }
+
+    while (sqlite3_step(grading_key_stmt) == SQLITE_ROW) {
+        GradingKeyIdMap grading_key_id_map;
+        grading_key_id_map.name = (const char*) sqlite3_column_text(grading_key_stmt, 1);
+        grading_key_id_map.id = sqlite3_column_int(grading_key_stmt, 0);
+        if (sqlite3_column_int(grading_key_stmt, 4) == GENDER_TYPE_MALE) {
+            grading_key_map.males.push_back(grading_key_id_map);
+        } else {
+            grading_key_map.females.push_back(grading_key_id_map);
+        }
+    }
+    sqlite3_finalize(grading_key_stmt);
+
+    return grading_key_map;
+}
+
+int Database::deleteGradingKey(int grading_key_id) {
+    String sql = "SELECT id FROM grading_keys where id = " + String(grading_key_id) + ";";
+    sqlite3_stmt* grading_key_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &grading_key_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(grading_key_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(grading_key_stmt) != SQLITE_ROW) {
+        sqlite3_finalize(grading_key_stmt);
+        return DB_NOT_FOUND;
+    }
+    sqlite3_finalize(grading_key_stmt);
+
+    sql = "DELETE FROM grading_keys WHERE id = " + String(grading_key_id) + ";";
+    
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to delete grading key: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+
+    return DB_SUCCESS;
+}
+
+int Database::putGradingKey(String name, int type, int length, int gender, std::vector<GradingKeyGrade> grades) {
+    String sql = "SELECT id FROM grading_keys WHERE name = '" + name + "';";
+    sqlite3_stmt* grading_key_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &grading_key_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(grading_key_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(grading_key_stmt) == SQLITE_ROW) {
+        sqlite3_finalize(grading_key_stmt);
+        return DB_CONFLICT;
+    }
+    sqlite3_finalize(grading_key_stmt);
+    
+    sql = "INSERT INTO grading_keys (name, type, length, gender) VALUES  ('" + name + "', " + String(type) + ", " + String(length) + ", " + String(gender) + ");";
+
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to insert grading key: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        if (sqlite3_errcode(this->db) == SQLITE_CONSTRAINT) {
+            return DB_CONFLICT;
+        } else {
+            return DB_FAILED;
+        }
+    }
+    int grading_key_id = sqlite3_last_insert_rowid(this->db);
+    for (int i = 0; i < grades.size(); i++) {
+        sql = "INSERT INTO grading_keys_grades (grading_key_id, time, grade) VALUES (" + String(grading_key_id) + ", " + String(grades[i].time) + ", " + String(grades[i].grade) + ");";
+        if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+            DEBUG_SER_PRINT("Failed to insert grading key grade: ");
+            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+            return DB_FAILED;
+        }
+    }
+    return grading_key_id;
+}
+
+int Database::patchGradingKey(int id, String name, int length, std::vector<GradingKeyGrade> grades) {
+    String sql = "SELECT * FROM grading_keys WHERE id = " + String(id) + ";";
+    sqlite3_stmt* grading_key_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &grading_key_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(grading_key_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(grading_key_stmt) != SQLITE_ROW) {
+        sqlite3_finalize(grading_key_stmt);
+        return DB_NOT_FOUND;
+    }
+    sqlite3_finalize(grading_key_stmt);
+
+    sql = "SELECT * FROM grading_keys WHERE name = '" + name + "';";
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &grading_key_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(grading_key_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(grading_key_stmt) == SQLITE_ROW) {
+        sqlite3_finalize(grading_key_stmt);
+        return DB_CONFLICT;
+    }
+    sqlite3_finalize(grading_key_stmt);
+
+    sql = "UPDATE grading_keys SET ";
+    if (name != "") {
+        sql += "name = '" + name + "'";
+    }
+    if (length != -1) {
+        if (name != "") {
+            sql += ", ";
+        }
+        sql += "length = " + String(length);
+    }
+    sql += " WHERE id = " + String(id) + ";";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to update grading key: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+
+    sql = "SELECT * FROM grading_keys_grades WHERE grading_key_id = " + String(id) + ";";
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &grading_key_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(grading_key_stmt);
+        return DB_FAILED;
+    }
+    while (sqlite3_step(grading_key_stmt) == SQLITE_ROW) {
+        float grade = sqlite3_column_double(grading_key_stmt, 2);
+        float time = sqlite3_column_int(grading_key_stmt, 1);
+        int id = sqlite3_column_int(grading_key_stmt, 0);
+
+        for (int i = 0; i < grades.size(); i++) {
+            if (grades[i].grade == grade) {
+                if (grades[i].time != time) {
+                    sql = "UPDATE grading_keys_grades SET time = " + String(grades[i].time) + " WHERE grading_key_id = " + String(id) + " AND grade = " + String(grade) + ";";
+                    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+                        DEBUG_SER_PRINT("Failed to update grading key grade: ");
+                        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+                        return DB_FAILED;
+                    }
+                }
+            }
+        }
+    }
+    sqlite3_finalize(grading_key_stmt);
+    return DB_SUCCESS;
 }

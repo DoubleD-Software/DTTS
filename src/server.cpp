@@ -57,6 +57,36 @@ void DTTSServer::begin() {
             rest_api.patchStudent(request, data_str);
         }
     );
+    server.on("/api/gradingkeys", HTTP_GET, [&](AsyncWebServerRequest *request) {
+        rest_api.getGradingKeys(request);
+    });
+    server.on("/api/gradingkeys", HTTP_DELETE, [&](AsyncWebServerRequest *request) {
+        rest_api.deleteGradingKey(request);
+    });
+    server.on("/api/gradingkeys",
+        HTTP_PUT,
+        [](AsyncWebServerRequest *request) {request->send(400);},
+        NULL,
+        [&](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+            String data_str = "";
+            for (int i = 0; i < len; i++) {
+                data_str += (char)data[i];
+            }
+            rest_api.putGradingKey(request, data_str);
+        }
+    );
+    server.on("/api/gradingkeys",
+        HTTP_PATCH,
+        [](AsyncWebServerRequest *request) {request->send(400);},
+        NULL,
+        [&](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+            String data_str = "";
+            for (int i = 0; i < len; i++) {
+                data_str += (char)data[i];
+            }
+            rest_api.patchGradingKey(request, data_str);
+        }
+    );
     
     server.serveStatic("/", SD, "/web");
     server.begin();

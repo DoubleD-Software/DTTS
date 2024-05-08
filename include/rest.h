@@ -6,11 +6,6 @@
 #include <ESPAsyncWebServer.h>
 #include <database.h>
 
-#define SPRINT_TYPE 0
-#define RUN_TYPE 1
-#define GENDER_TYPE_MALE 0
-#define GENDER_TYPE_FEMALE 1
-
 class DTTSRestApi {
     public:
         DTTSRestApi(Database *db);
@@ -21,6 +16,10 @@ class DTTSRestApi {
         void deleteStudent(AsyncWebServerRequest *request);
         void putStudent(AsyncWebServerRequest *request, String data);
         void patchStudent(AsyncWebServerRequest *request, String data);
+        void getGradingKeys(AsyncWebServerRequest *request);
+        void deleteGradingKey(AsyncWebServerRequest *request);
+        void putGradingKey(AsyncWebServerRequest *request, String data);
+        void patchGradingKey(AsyncWebServerRequest *request, String data);
         
     private:
         Database *db;
