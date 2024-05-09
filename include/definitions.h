@@ -19,4 +19,7 @@
 
 #define DB_PATH "/sd/dtts.db"
 
+#define ADMIN_USERNAME "admin"
+#define ADMIN_PASSWORD "admin"
+
 #endif

@@ -150,9 +150,26 @@ void Database::createTables() {
             DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
             sysHalt(DB_CREATE_FAILED, "Failed to create table.");
         }
-
-        sqlite3_exec(this->db, "INSERT INTO teachers (name, username, password, administrator) VALUES ('Jonas Arnold', 'ArnoldJ-MPG', 'abcd1234', 1);", 0, 0, 0);
     }
+
+    String sql = "SELECT id FROM teachers WHERE name = '" + String(ADMIN_USERNAME) + "';";
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(stmt);
+        sysHalt(DB_CREATE_FAILED, "Failed to prepare statement.");
+    }
+    if (sqlite3_step(stmt) != SQLITE_ROW) {
+        DEBUG_SER_PRINTLN("Creating admin teacher.");
+        sql = "INSERT INTO teachers (name, username, password, administrator) VALUES ('" + String(ADMIN_USERNAME) + "', '" + String(ADMIN_USERNAME) + "', '" + String(ADMIN_PASSWORD) + "', 1);";
+        if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+            DEBUG_SER_PRINT("Failed to insert admin teacher: ");
+            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+            sysHalt(DB_CREATE_FAILED, "Failed to create admin teacher.");
+        }
+    }
+    sqlite3_finalize(stmt);
 }
 
 /**
@@ -458,6 +475,41 @@ int Database::deleteRun(int run_id) {
         return DB_FAILED;
     }
 
+    // Due to a bug in the sqlite3 library, we can't rely on the ON DELETE CASCADE foreign key constraint
+    sql = "SELECT id FROM results WHERE run_id = " + String(run_id) + ";";
+    sqlite3_stmt* result_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &result_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(result_stmt);
+        return DB_FAILED;
+    }
+    while (sqlite3_step(result_stmt) == SQLITE_ROW) {
+        int result_id = sqlite3_column_int(result_stmt, 0);
+        String lap_sql = "DELETE FROM laps WHERE result_id = " + String(result_id) + ";";
+        if (sqlite3_exec(this->db, lap_sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+            DEBUG_SER_PRINT("Failed to delete laps: ");
+            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+            return DB_FAILED;
+        }
+    }
+    sqlite3_finalize(result_stmt);
+    
+    sql = "DELETE FROM results WHERE run_id = " + String(run_id) + ";";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to delete results: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+
+    sql = "DELETE FROM participants WHERE run_id = " + String(run_id) + ";";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to delete participants: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+    // The above code may be removed if the ON DELETE CASCADE foreign key constraint is fixed
+
     return DB_SUCCESS;
 }
 
@@ -626,6 +678,41 @@ int Database::deleteStudent(int student_id) {
         DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
         return DB_FAILED;
     }
+
+    // Due to a bug in the sqlite3 library, we can't rely on the ON DELETE CASCADE foreign key constraint
+    sql = "SELECT id FROM results WHERE student_id = " + String(student_id) + ";";
+    sqlite3_stmt* result_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &result_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(result_stmt);
+        return DB_FAILED;
+    }
+    while (sqlite3_step(result_stmt) == SQLITE_ROW) {
+        int result_id = sqlite3_column_int(result_stmt, 0);
+        String lap_sql = "DELETE FROM laps WHERE result_id = " + String(result_id) + ";";
+        if (sqlite3_exec(this->db, lap_sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+            DEBUG_SER_PRINT("Failed to delete laps: ");
+            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+            return DB_FAILED;
+        }
+    }
+    sqlite3_finalize(result_stmt);
+
+    sql = "DELETE FROM results WHERE student_id = " + String(student_id) + ";";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to delete results: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+
+    sql = "DELETE FROM participants WHERE student_id = " + String(student_id) + ";";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to delete participants: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+    // The above code may be removed if the ON DELETE CASCADE foreign key constraint is fixed
 
     return DB_SUCCESS;
 }
@@ -891,6 +978,15 @@ int Database::deleteGradingKey(int grading_key_id) {
         return DB_FAILED;
     }
 
+    // Due to a bug in the sqlite3 library, we can't rely on the ON DELETE CASCADE foreign key constraint
+    sql = "DELETE FROM grading_keys_grades WHERE grading_key_id = " + String(grading_key_id) + ";";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to delete grading key grades: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+    // The above code may be removed if the ON DELETE CASCADE foreign key constraint is fixed
+
     return DB_SUCCESS;
 }
 
@@ -1107,6 +1203,7 @@ ClassInfo Database::getClassInfo(int class_id) {
         ClassInfoStudent student;
         student.name = String((const char*) sqlite3_column_text(student_stmt, 1));
         student.gender = sqlite3_column_int(student_stmt, 2);
+        student.student_id = sqlite3_column_int(student_stmt, 0);
         
         sql = "SELECT * FROM results WHERE student_id = " + String(sqlite3_column_int(student_stmt, 0)) + ";";
         sqlite3_stmt* result_stmt;
@@ -1204,6 +1301,67 @@ int Database::deleteClass(int class_id) {
         DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
         return DB_FAILED;
     }
+
+    // Due to a bug in the sqlite3 library, we can't rely on the ON DELETE CASCADE foreign key constraint
+    sql = "SELECT id FROM students WHERE class_id = " + String(class_id) + ";";
+    sqlite3_stmt* student_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &student_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(student_stmt);
+        return DB_FAILED;
+    }
+    while (sqlite3_step(student_stmt) == SQLITE_ROW) {
+        int student_id = sqlite3_column_int(student_stmt, 0);
+        String result_sql = "SELECT id FROM results WHERE student_id = " + String(student_id) + ";";
+        sqlite3_stmt* result_stmt;
+        if (sqlite3_prepare_v2(this->db, result_sql.c_str(), -1, &result_stmt, 0) != SQLITE_OK) {
+            DEBUG_SER_PRINT("Failed to prepare statement: ");
+            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+            sqlite3_finalize(result_stmt);
+            return DB_FAILED;
+        }
+        while (sqlite3_step(result_stmt) == SQLITE_ROW) {
+            int result_id = sqlite3_column_int(result_stmt, 0);
+            String lap_sql = "DELETE FROM laps WHERE result_id = " + String(result_id) + ";";
+            if (sqlite3_exec(this->db, lap_sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+                DEBUG_SER_PRINT("Failed to delete laps: ");
+                DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+                return DB_FAILED;
+            }
+        }
+        sqlite3_finalize(result_stmt);
+
+        result_sql = "DELETE FROM results WHERE student_id = " + String(student_id) + ";";
+        if (sqlite3_exec(this->db, result_sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+            DEBUG_SER_PRINT("Failed to delete results: ");
+            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+            return DB_FAILED;
+        }
+
+        String participant_sql = "DELETE FROM participants WHERE student_id = " + String(student_id) + ";";
+        if (sqlite3_exec(this->db, participant_sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+            DEBUG_SER_PRINT("Failed to delete participants: ");
+            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+            return DB_FAILED;
+        }
+    }
+
+    sql = "DELETE FROM students WHERE class_id = " + String(class_id) + ";";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to delete students: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+
+    sql = "DELETE FROM runs WHERE class_id = " + String(class_id) + ";";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to delete runs: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+    // The above code may be removed if the ON DELETE CASCADE foreign key constraint is fixed
+
     return DB_SUCCESS;
 }
 

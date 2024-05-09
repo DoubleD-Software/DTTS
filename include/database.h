@@ -7,6 +7,7 @@
 #include <fatal.h>
 #include <SD.h>
 #include <error_codes.h>
+#include <definitions.h>
 #include <vector>
 
 #define SQL_TYPE_INT 0

@@ -691,7 +691,11 @@ void DTTSRestApi::getTeachers(AsyncWebServerRequest *request) {
  * @param request Pointer to the request object.
 */
 void DTTSRestApi::deleteTeacher(AsyncWebServerRequest *request) {
-    if ((checkAuth(request) == ACCESS_DENIED) && (access_level != ACCESS_ADMIN)) return;
+    if (access_level != ACCESS_ADMIN) {
+        request->send(403, "application/json", "{}");
+        return;
+    } 
+    if (checkAuth(request) == ACCESS_DENIED) return;
 
     int request_result = 200;
 
@@ -713,7 +717,11 @@ void DTTSRestApi::deleteTeacher(AsyncWebServerRequest *request) {
  * @param data String containing the JSON data.
 */
 void DTTSRestApi::putTeacher(AsyncWebServerRequest *request, String data) {
-    if ((checkAuth(request) == ACCESS_DENIED) && (access_level != ACCESS_ADMIN)) return;
+    if (access_level != ACCESS_ADMIN) {
+        request->send(403, "application/json", "{}");
+        return;
+    } 
+    if (checkAuth(request) == ACCESS_DENIED) return;
 
     int request_result = 201;
     JsonDocument doc;
@@ -754,7 +762,11 @@ void DTTSRestApi::putTeacher(AsyncWebServerRequest *request, String data) {
  * @param data String containing the JSON data.
 */
 void DTTSRestApi::patchTeacher(AsyncWebServerRequest *request, String data) {
-    if ((checkAuth(request) == ACCESS_DENIED) && (access_level != ACCESS_ADMIN)) return;
+    if (access_level != ACCESS_ADMIN) {
+        request->send(403, "application/json", "{}");
+        return;
+    } 
+    if (checkAuth(request) == ACCESS_DENIED) return;
 
     int request_result = 200;
     JsonDocument doc;
