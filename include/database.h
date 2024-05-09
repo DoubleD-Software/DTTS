@@ -20,11 +20,12 @@
 #define GENDER_TYPE_MALE 0
 #define GENDER_TYPE_FEMALE 1
 
-#define UNKNOWN_NAME "Unknown"
+#define UNKNOWN_NAME "N/A"
 #define DB_SUCCESS 0
 #define DB_FAILED -1
 #define DB_CONFLICT -2
 #define DB_NOT_FOUND -3
+#define DB_INVALID -4
 
 struct SqlColumn {
     String name;
@@ -176,6 +177,26 @@ typedef struct {
     std::vector<ClassInfoStudent> students;
 } ClassInfo;
 
+typedef struct {
+    int student_id = 0;
+    String name;
+} ClassStudent;
+
+typedef struct {
+    int class_id = 0;
+    String name;
+} ClassName;
+
+typedef struct {
+    int teacher_id = 0;
+    String name;
+} TeacherSimple;
+
+typedef struct {
+    String name;
+    String username;
+} Teacher;
+
 class Database {
     public:
         Database(String db_path);
@@ -202,6 +223,14 @@ class Database {
         int deleteClass(int class_id);
         int putClass(String name);
         int patchClass(int id, String name);
+        std::vector<ClassStudent> getClassStudents(int class_id);
+        std::vector<ClassName> getClassNames();
+        std::vector<TeacherSimple> getTeachers();
+        Teacher getTeacher(int teacher_id);
+        int deleteTeacher(int teacher_id);
+        int putTeacher(String name, String username, String password);
+        int patchTeacher(int id, String name, String username, String password);
+        int checkPassword(String username, String password);
 
     private:
         void createTables();

@@ -1,10 +1,24 @@
 #include <rest.h>
 
+/**
+ * This file contains all endpoints for the REST API.
+ * A detailed description of each endpoint can be found at https://git.double-d.software/DoubleD-Software/DTTS/wiki/Routes
+
+
+ * Constructor for the DTTSRestApi class.
+ * @param db Pointer to the database object.
+*/
 DTTSRestApi::DTTSRestApi(Database *db) {
     this->db = db;
 }
 
+/**
+ * GET request handler for the /api/runs endpoint. This function returns information about runs.
+ * @param request Pointer to the request object.
+*/
 void DTTSRestApi::getRun(AsyncWebServerRequest *request) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     JsonDocument doc;
     int request_result = 200;
 
@@ -75,7 +89,13 @@ void DTTSRestApi::getRun(AsyncWebServerRequest *request) {
     request->send(request_result, "application/json", json_output);
 }
 
+/**
+ * DELETE request handler for the /api/runs endpoint. This function deletes a run from the database.
+ * @param request Pointer to the request object.
+*/
 void DTTSRestApi::deleteRun(AsyncWebServerRequest *request) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     int request_result = 200;
 
     if (request->hasParam("id")) {
@@ -90,7 +110,14 @@ void DTTSRestApi::deleteRun(AsyncWebServerRequest *request) {
     request->send(request_result, "application/json", "{}");
 }
 
+/**
+ * PUT request handler for the /api/runs endpoint. This function adds a run to the database.
+ * @param request Pointer to the request object.
+ * @param data String containing the JSON data.
+*/
 void DTTSRestApi::putRun(AsyncWebServerRequest *request, String data) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     int request_result = 200;
     JsonDocument doc;
     deserializeJson(doc, data);
@@ -127,7 +154,13 @@ void DTTSRestApi::putRun(AsyncWebServerRequest *request, String data) {
     request->send(request_result, "application/json", "{}");
 }
 
+/**
+ * GET request handler for the /api/students endpoint. This function returns information about students.
+ * @param request Pointer to the request object.
+*/
 void DTTSRestApi::getStudent(AsyncWebServerRequest *request) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     int request_result = 200;
     JsonDocument doc;
 
@@ -163,7 +196,13 @@ void DTTSRestApi::getStudent(AsyncWebServerRequest *request) {
     request->send(request_result, "application/json", json_output);
 }
 
+/**
+ * DELETE request handler for the /api/students endpoint. This function deletes a student from the database.
+ * @param request Pointer to the request object.
+*/
 void DTTSRestApi::deleteStudent(AsyncWebServerRequest *request) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     int request_result = 200;
 
     if (request->hasParam("id")) {
@@ -178,7 +217,14 @@ void DTTSRestApi::deleteStudent(AsyncWebServerRequest *request) {
     request->send(request_result, "application/json", "{}");
 }
 
+/**
+ * PUT request handler for the /api/students endpoint. This function adds a student to the database.
+ * @param request Pointer to the request object.
+ * @param data String containing the JSON data.
+*/
 void DTTSRestApi::putStudent(AsyncWebServerRequest *request, String data) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     int request_result = 201;
     JsonDocument doc;
     deserializeJson(doc, data);
@@ -212,7 +258,14 @@ void DTTSRestApi::putStudent(AsyncWebServerRequest *request, String data) {
     request->send(request_result, "application/json", json_output);   
 }
 
+/**
+ * PATCH request handler for the /api/students endpoint. This function updates a student in the database.
+ * @param request Pointer to the request object.
+ * @param data String containing the JSON data.
+*/
 void DTTSRestApi::patchStudent(AsyncWebServerRequest *request, String data) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     int request_result = 200;
     JsonDocument doc;
     deserializeJson(doc, data);
@@ -246,7 +299,13 @@ void DTTSRestApi::patchStudent(AsyncWebServerRequest *request, String data) {
     request->send(request_result, "application/json", "{}");   
 }
 
+/**
+ * GET request handler for the /api/gradingkeys endpoint. This function returns information about grading keys.
+ * @param request Pointer to the request object.
+*/
 void DTTSRestApi::getGradingKeys(AsyncWebServerRequest *request) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     int request_result = 200;
     JsonDocument doc;
 
@@ -294,7 +353,13 @@ void DTTSRestApi::getGradingKeys(AsyncWebServerRequest *request) {
     request->send(request_result, "application/json", json_output);
 }
 
+/**
+ * DELETE request handler for the /api/gradingkeys endpoint. This function deletes a grading key from the database.
+ * @param request Pointer to the request object.
+*/
 void DTTSRestApi::deleteGradingKey(AsyncWebServerRequest *request) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     int request_result = 200;
 
     if (request->hasParam("id")) {
@@ -309,7 +374,14 @@ void DTTSRestApi::deleteGradingKey(AsyncWebServerRequest *request) {
     request->send(request_result, "application/json", "{}");
 }
 
+/**
+ * PUT request handler for the /api/gradingkeys endpoint. This function adds a grading key to the database.
+ * @param request Pointer to the request object.
+ * @param data String containing the JSON data.
+*/
 void DTTSRestApi::putGradingKey(AsyncWebServerRequest *request, String data) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     int request_result = 201;
     JsonDocument doc;
     deserializeJson(doc, data);
@@ -358,7 +430,13 @@ void DTTSRestApi::putGradingKey(AsyncWebServerRequest *request, String data) {
     request->send(request_result, "application/json", json_output);   
 }
 
+/**
+ * PATCH request handler for the /api/gradingkeys endpoint. This function updates a grading key in the database.
+ * @param request Pointer to the request object.
+*/
 void DTTSRestApi::patchGradingKey(AsyncWebServerRequest *request, String data) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     int request_result = 200;
     JsonDocument doc;
     deserializeJson(doc, data);
@@ -404,11 +482,40 @@ void DTTSRestApi::patchGradingKey(AsyncWebServerRequest *request, String data) {
     request->send(request_result, "application/json", "{}");
 }
 
+/**
+ * GET request handler for the /api/classes endpoint. This function returns information about classes.
+ * @param request Pointer to the request object.
+*/
 void DTTSRestApi::getClasses(AsyncWebServerRequest *request) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     int request_result = 200;
     JsonDocument doc;
 
-    if (request->hasParam("id")) {
+    if (request->hasParam("namesOnly")) {
+        int names_only = request->getParam("namesOnly")->value().toInt();
+        if (names_only != 1) {
+            request_result = 400;
+        } else {
+            std::vector<ClassName> classes = db->getClassNames();
+            for (int i = 0; i < classes.size(); i++) {
+                String index = String(classes[i].class_id);
+                doc[index] = classes[i].name;
+            }
+        }
+    } else if (request->hasParam("id") && request->hasParam("studentsOnly")) {
+        int students_only = request->getParam("studentsOnly")->value().toInt();
+        if (students_only != 1) {
+            request_result = 400;
+        } else {
+            int class_id = request->getParam("id")->value().toInt();
+            std::vector<ClassStudent> students = db->getClassStudents(class_id);
+            for (int i = 0; i < students.size(); i++) {
+                String index = String(students[i].student_id);
+                doc[index] = students[i].name;
+            }
+        }
+    } else if (request->hasParam("id")) {
         int class_id = request->getParam("id")->value().toInt();
         ClassInfo class_info = db->getClassInfo(class_id);
         if (class_info.name == "") {
@@ -452,7 +559,13 @@ void DTTSRestApi::getClasses(AsyncWebServerRequest *request) {
     request->send(request_result, "application/json", json_output);
 }
 
-void DTTSRestApi::deleteClass(AsyncWebServerRequest *request) {
+/**
+ * DELETE request handler for the /api/classes endpoint. This function deletes a class from the database.
+ * @param request Pointer to the request object.
+*/
+void DTTSRestApi::deleteClass(AsyncWebServerRequest *request) { 
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     int request_result = 200;
 
     if (request->hasParam("id")) {
@@ -467,7 +580,14 @@ void DTTSRestApi::deleteClass(AsyncWebServerRequest *request) {
     request->send(request_result, "application/json", "{}");
 }
 
+/**
+ * PUT request handler for the /api/classes endpoint. This function adds a class to the database.
+ * @param request Pointer to the request object.
+ * @param data String containing the JSON data.
+*/
 void DTTSRestApi::putClass(AsyncWebServerRequest *request, String data) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     int request_result = 201;
     JsonDocument doc;
     deserializeJson(doc, data);
@@ -499,7 +619,14 @@ void DTTSRestApi::putClass(AsyncWebServerRequest *request, String data) {
     request->send(request_result, "application/json", json_output);   
 }
 
+/**
+ * PATCH request handler for the /api/classes endpoint. This function updates a class in the database.
+ * @param request Pointer to the request object.
+ * @param data String containing the JSON data.
+*/
 void DTTSRestApi::patchClass(AsyncWebServerRequest *request, String data) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
     int request_result = 200;
     JsonDocument doc;
     deserializeJson(doc, data);
@@ -523,5 +650,222 @@ void DTTSRestApi::patchClass(AsyncWebServerRequest *request, String data) {
             request_result = 400;
         }
     }
-    request->send(request_result, "application/json", "{}");   
+    request->send(request_result, "application/json", "{}");  
+}
+
+/**
+ * GET request handler for the /api/teachers endpoint. This function returns information about teachers.
+ * @param request Pointer to the request object.
+ * @param data String containing the JSON data.
+*/
+void DTTSRestApi::getTeachers(AsyncWebServerRequest *request) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
+    int request_result = 200;
+    JsonDocument doc;
+
+    if (request->hasParam("id")) {
+        int teacher_id = request->getParam("id")->value().toInt();
+        Teacher teacher = db->getTeacher(teacher_id);
+        if (teacher.name == "") {
+            request_result = 404;
+        } else {
+            doc["name"] = teacher.name;
+            doc["username"] = teacher.username;
+        }
+    } else {
+        std::vector<TeacherSimple> teachers = db->getTeachers();
+        for (int i = 0; i < teachers.size(); i++) {
+            String index = String(teachers[i].teacher_id);
+            doc[index]["name"] = teachers[i].name;
+        }
+    }
+
+    String json_output;
+    serializeJson(doc, json_output);
+    request->send(request_result, "application/json", json_output);
+}
+
+/**
+ * DELETE request handler for the /api/teachers endpoint. This function deletes a teacher from the database and requires admin access.
+ * @param request Pointer to the request object.
+*/
+void DTTSRestApi::deleteTeacher(AsyncWebServerRequest *request) {
+    if ((checkAuth(request) == ACCESS_DENIED) && (access_level != ACCESS_ADMIN)) return;
+
+    int request_result = 200;
+
+    if (request->hasParam("id")) {
+        int teacher_id = request->getParam("id")->value().toInt();
+        if (db->deleteTeacher(teacher_id)) {
+            request_result = 404;
+        }
+    } else {
+        request_result = 400;
+    }
+
+    request->send(request_result, "application/json", "{}");
+}
+
+/**
+ * PUT request handler for the /api/teachers endpoint. This function adds a teacher to the database and requires admin access.
+ * @param request Pointer to the request object.
+ * @param data String containing the JSON data.
+*/
+void DTTSRestApi::putTeacher(AsyncWebServerRequest *request, String data) {
+    if ((checkAuth(request) == ACCESS_DENIED) && (access_level != ACCESS_ADMIN)) return;
+
+    int request_result = 201;
+    JsonDocument doc;
+    deserializeJson(doc, data);
+    if (doc.isNull()) {
+        request_result = 400;
+        doc.clear();
+    } else {
+        if (doc.containsKey("name") && doc.containsKey("username") && doc.containsKey("password")) {
+            String name = doc["name"];
+            String username = doc["username"];
+            String password = doc["password"];
+            doc.clear();
+
+            int teacher_id = db->putTeacher(name, username, password);
+            if (teacher_id == DB_FAILED) {
+                request_result = 500;
+            } else if (teacher_id == DB_CONFLICT) {
+                request_result = 409;
+            } else if (teacher_id == DB_NOT_FOUND) {
+                request_result = 400;
+            } else {
+                doc["id"] = teacher_id;
+            }
+        } else {
+            doc.clear();
+            request_result = 400;
+        }
+    }
+    String json_output;
+    serializeJson(doc, json_output);
+    request->send(request_result, "application/json", json_output);   
+}
+
+/**
+ * PATCH request handler for the /api/teachers endpoint. This function updates a teacher in the database and requires admin access.
+ * @param request Pointer to the request object.
+ * @param data String containing the JSON data.
+*/
+void DTTSRestApi::patchTeacher(AsyncWebServerRequest *request, String data) {
+    if ((checkAuth(request) == ACCESS_DENIED) && (access_level != ACCESS_ADMIN)) return;
+
+    int request_result = 200;
+    JsonDocument doc;
+    deserializeJson(doc, data);
+    if (doc.isNull()) {
+        request_result = 400;
+    } else {
+        if (request->hasArg("id") && (doc.containsKey("name") || doc.containsKey("username") || doc.containsKey("password"))) {
+            int result;
+            int id = request->getParam("id")->value().toInt();
+            String name = "";
+            String username = "";
+            String password = "";
+            if (doc.containsKey("name")) {
+                name = doc["name"].as<String>();
+            }
+            if (doc.containsKey("username")) {
+                username = doc["username"].as<String>();
+            }
+            if (doc.containsKey("password")) {
+                password = doc["password"].as<String>();
+            }
+
+            result = db->patchTeacher(id, name, username, password);
+            if (result == DB_FAILED) {
+                request_result = 500;
+            } else if (result == DB_CONFLICT) {
+                request_result = 409;
+            } else if (result == DB_NOT_FOUND) {
+                request_result = 404;
+            }
+        } else {
+            request_result = 400;
+        }
+    }
+    request->send(request_result, "application/json", "{}");  
+}
+
+/**
+ * GET request handler for the /api/whoami endpoint. This function returns if the user is an admin or not.
+ * @param request Pointer to the request object.
+*/
+void DTTSRestApi::whoAmI(AsyncWebServerRequest *request) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
+    JsonDocument doc;
+
+    if (access_level == ACCESS_ADMIN) {
+        doc["admin"] = true;
+    } else {
+        doc["admin"] = false;
+    }
+
+    String json_output;
+    serializeJson(doc, json_output);
+    request->send(200, "application/json", json_output);
+}
+
+/**
+ * POST request handler for the /api/authenticate endpoint. This function authenticates a user and returns a session ID in a cookie.
+ * @param request Pointer to the request object.
+ * @param data String containing the JSON data.
+*/
+void DTTSRestApi::authenticate(AsyncWebServerRequest *request, String data) {
+    int request_result = 200;
+    JsonDocument doc;
+    deserializeJson(doc, data);
+    if (doc.isNull()) {
+        request_result = 400;
+    } else {
+        if (doc.containsKey("username") && doc.containsKey("password") && doc.containsKey("date")) {
+            current_date = doc["date"];
+            String username = doc["username"];
+            String password = doc["password"];
+
+            access_level = db->checkPassword(username, password); 
+
+            if (access_level >= 0) {
+                user_logged_in = true;
+                this->current_session_id = random(0xFFFF, 0x7FFFFFFF);
+                
+                AsyncWebServerResponse *response = request->beginResponse(200, "application/json", "{}");
+                response->addHeader("Set-Cookie", "SESSIONID=" + String(this->current_session_id));
+                request->send(response);
+                return;
+            } else {
+                request_result = 401;
+            }
+        } else {
+            request_result = 400;
+        }
+    }
+    request->send(request_result, "application/json", "{}");
+}
+
+/**
+ * This function checks the session ID of a request and returns if the user is logged in or not.
+ * @param request Pointer to the request object.
+*/
+int DTTSRestApi::checkAuth(AsyncWebServerRequest *request) {
+    if (user_logged_in) {
+        if (request->hasHeader("Cookie")) {
+            int cookie_index = request->header("Cookie").indexOf("SESSIONID=");
+            if (cookie_index != -1) {
+                String session_id = request->header("Cookie").substring(cookie_index + 10);
+                if (session_id.toInt() == this->current_session_id) {
+                    return ACCESS_GRANTED;
+                }
+            }
+        }
+    }
+    request->send(401, "application/json", "{}");
+    return ACCESS_DENIED;
 }

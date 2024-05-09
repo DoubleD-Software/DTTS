@@ -1,5 +1,9 @@
 #include <database.h>
 
+/**
+ * Table layout for the database
+ * Gets converted to SQL and executed in the createTables function
+*/
 const SqlTable Database::TABLES[] = {
     SqlTable("teachers", {
         SqlColumn("id", SQL_TYPE_INT, SQL_TYPE_PRIMARY_KEY | SQL_TYPE_AUTO_INCREMENT),
@@ -41,7 +45,7 @@ const SqlTable Database::TABLES[] = {
         SqlColumn("class_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "classes", "id"),
         SqlColumn("grading_key_m_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "grading_keys", "id"),
         SqlColumn("grading_key_f_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "grading_keys", "id"),
-        SqlColumn("teacher_id", SQL_TYPE_INT, SQL_TYPE_FOREIGN_KEY, "teachers", "id"),
+        SqlColumn("teacher_id", SQL_TYPE_INT),
         SqlColumn("length", SQL_TYPE_INT),
         SqlColumn("laps", SQL_TYPE_REAL),
     }),
@@ -66,36 +70,37 @@ const SqlTable Database::TABLES[] = {
     })
 };
 
+/**
+ * Constructor for the Database class
+ * @param db_path The path to the database file
+*/
 Database::Database(String db_path) {
     this->db_path = db_path;
 }
 
+/**
+ * Opens the database and creates the tables if they don't exist
+*/
 void Database::open() {
     if (sqlite3_open(this->db_path.c_str(), &this->db) != SQLITE_OK) {
         DEBUG_SER_PRINT("Failed to open database: ");
-        DEBUG_SER_PRINTLN(this->db_path);
-        DEBUG_SER_PRINTLN("Creating database.");
-        File db_file = SD.open(this->db_path, FILE_WRITE, true);
-        if (!db_file) {
-            DEBUG_SER_PRINT("Failed to create database file: ");
-            DEBUG_SER_PRINTLN(this->db_path);
-            sysHalt(DB_CREATE_FAILED, "Failed to create database file.");
-        }
-        db_file.flush();
-        db_file.close();
-        if (sqlite3_open(this->db_path.c_str(), &this->db) != SQLITE_OK) {
-            DEBUG_SER_PRINT("Failed to open database: ");
-            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
-            sysHalt(DB_OPEN_FAILED, "Failed to open database.");
-        }
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sysHalt(DB_OPEN_FAILED, "Failed to open database.");
     }
+
     createTables();
 }
 
+/**
+ * Closes the database
+*/
 void Database::close() {
     sqlite3_close(this->db);
 }
 
+/**
+ * Creates the tables in the database using the TABLES constant
+*/
 void Database::createTables() {
     DEBUG_SER_PRINTLN("Enabling foreign key support (PRAGMA foreign_keys = ON;)");
     if (sqlite3_exec(this->db, "PRAGMA foreign_keys = ON;", 0, 0, 0) != SQLITE_OK) {
@@ -145,9 +150,16 @@ void Database::createTables() {
             DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
             sysHalt(DB_CREATE_FAILED, "Failed to create table.");
         }
+
+        sqlite3_exec(this->db, "INSERT INTO teachers (name, username, password, administrator) VALUES ('Jonas Arnold', 'ArnoldJ-MPG', 'abcd1234', 1);", 0, 0, 0);
     }
 }
 
+/**
+ * Fetches runs from the database by their date
+ * @param date The date to fetch runs for (julian date)
+ * @return A vector of RunInfo objects
+*/
 std::vector<RunInfo> Database::getRunsByDate(int date) {
     std::vector<RunInfo> runs;
 
@@ -226,6 +238,11 @@ std::vector<RunInfo> Database::getRunsByDate(int date) {
     return runs;
 }
 
+/**
+ * Fetches runs from the database by their ID
+ * @param run_id The ID of the run to fetch
+ * @return A RunInfoSpecific object; if the run is not found, the type will be -1
+*/
 RunInfoSpecific Database::getRunInfo(int run_id) {
     RunInfoSpecific run;
     run.type = -1;
@@ -350,6 +367,12 @@ RunInfoSpecific Database::getRunInfo(int run_id) {
     return run;
 }
 
+/**
+ * Fetches a specific student's information for a run
+ * @param run_id The ID of the run
+ * @param student_id The ID of the student
+ * @return A RunInfoStudentLaps object; if the student is not found, the time will be -1
+*/
 RunInfoStudentLaps Database::getRunInfoStudent(int run_id, int student_id) {
     RunInfoStudentLaps student;
     student.time = -1;
@@ -408,6 +431,11 @@ RunInfoStudentLaps Database::getRunInfoStudent(int run_id, int student_id) {
     return student;
 }
 
+/**
+ * Deletes a run from the database and all associated results and laps
+ * @param run_id The ID of the run to delete
+ * @return A status code defined in database.h
+*/
 int Database::deleteRun(int run_id) {
     String sql = "SELECT * FROM runs WHERE id = " + String(run_id) + ";";
     sqlite3_stmt* run_stmt;
@@ -433,6 +461,19 @@ int Database::deleteRun(int run_id) {
     return DB_SUCCESS;
 }
 
+/**
+ * Creates a new run in the database
+ * @param type The type of run
+ * @param date The date of the run
+ * @param class_id The ID of the class the run is for
+ * @param grading_key_m_id The ID of the male grading key
+ * @param grading_key_f_id The ID of the female grading key
+ * @param teacher_id The ID of the teacher
+ * @param length The length of the run in meters
+ * @param laps The number of laps
+ * @param participants A vector of student IDs participating in the run
+ * @return The ID of the new run, or a status code defined in database.h
+*/
 int Database::putRun(int type, int date, int class_id, int grading_key_m_id, int grading_key_f_id, int teacher_id, int length, float laps, std::vector<int> participants) {
     String sql = "INSERT INTO runs (type, date, class_id, grading_key_m_id, grading_key_f_id, teacher_id, length, laps) VALUES (" + String(type) + ", " + String(date) + ", " + String(class_id) + ", " + String(grading_key_m_id) + ", " + String(grading_key_f_id) + ", " + String(teacher_id) + ", " + String(length) + ", " + String(laps, 2) + ");";
     if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
@@ -456,6 +497,11 @@ int Database::putRun(int type, int date, int class_id, int grading_key_m_id, int
     return run_id;
 }
 
+/**
+ * Fetches a student's information from the database
+ * @param student_id The ID of the student
+ * @return A StudentInfo object
+*/
 StudentInfo Database::getStudentInfo(int student_id) {
     StudentInfo student;
 
@@ -568,6 +614,11 @@ StudentInfo Database::getStudentInfo(int student_id) {
     return student;
 };
 
+/**
+ * Deletes a student from the database
+ * @param student_id The ID of the student to delete
+ * @return A status code defined in database.h
+*/
 int Database::deleteStudent(int student_id) {
     String sql = "DELETE FROM students WHERE id = " + String(student_id) + ";";
     if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
@@ -579,6 +630,13 @@ int Database::deleteStudent(int student_id) {
     return DB_SUCCESS;
 }
 
+/**
+ * Creates a new student in the database
+ * @param name The name of the student
+ * @param gender The gender of the student
+ * @param class_id The ID of the class the student is in
+ * @return The ID of the new student, or a status code defined in database.h
+*/
 int Database::putStudent(String name, int gender, int class_id) {
     String sql = "SELECT id FROM students WHERE name = '" + name + "';";
 
@@ -623,6 +681,12 @@ int Database::putStudent(String name, int gender, int class_id) {
     return student_id;
 }
 
+/**
+ * Edits a student in the database
+ * @param id The ID of the student to edit
+ * @param name The new name of the student or "" to keep the same
+ * @param class_id The new class ID of the student or -1 to keep the same
+*/
 int Database::patchStudent(int id, String name, int class_id) {
     String sql = "SELECT * FROM students WHERE id = '" + String(id) + "';";
 
@@ -671,6 +735,10 @@ int Database::patchStudent(int id, String name, int class_id) {
     return DB_SUCCESS;
 }
 
+/**
+ * Fetches all grading keys from the database
+ * @return A vector of GradingKeySimple objects
+*/
 std::vector<GradingKeySimple> Database::getGradingKeys() {
     std::vector<GradingKeySimple> grading_keys;
 
@@ -715,6 +783,11 @@ std::vector<GradingKeySimple> Database::getGradingKeys() {
     return grading_keys;
 }
 
+/**
+ * Fetches the information for a specific grading key
+ * @param grading_key_id The ID of the grading key
+ * @return A GradingKey object; if the grading key is not found, the type will be -1
+*/
 GradingKey Database::getGradingKey(int grading_key_id) {
     GradingKey grading_key;
     grading_key.type = -1;
@@ -758,6 +831,11 @@ GradingKey Database::getGradingKey(int grading_key_id) {
     return grading_key;
 }
 
+/**
+ * Fetches the grading key map for a specific type and length
+ * @param type The type of the grading key; type in this context refers to the gender
+ * @param length The length of the grading key
+*/
 GradingKeyMap Database::getGradingKeyMap(int type, int length) {
     GradingKeyMap grading_key_map;
 
@@ -785,6 +863,11 @@ GradingKeyMap Database::getGradingKeyMap(int type, int length) {
     return grading_key_map;
 }
 
+/**
+ * Deletes a grading key from the database
+ * @param grading_key_id The ID of the grading key to delete
+ * @return A status code defined in database.h
+*/
 int Database::deleteGradingKey(int grading_key_id) {
     String sql = "SELECT id FROM grading_keys where id = " + String(grading_key_id) + ";";
     sqlite3_stmt* grading_key_stmt;
@@ -811,6 +894,15 @@ int Database::deleteGradingKey(int grading_key_id) {
     return DB_SUCCESS;
 }
 
+/**
+ * Creates a new grading key in the database
+ * @param name The name of the grading key
+ * @param type The type of the grading key
+ * @param length The length of the results the grading key is for
+ * @param gender The gender the grading key is for
+ * @param grades A vector of GradingKeyGrade objects
+ * @return The ID of the new grading key, or a status code defined in database.h
+*/
 int Database::putGradingKey(String name, int type, int length, int gender, std::vector<GradingKeyGrade> grades) {
     String sql = "SELECT id FROM grading_keys WHERE name = '" + name + "';";
     sqlite3_stmt* grading_key_stmt;
@@ -849,6 +941,13 @@ int Database::putGradingKey(String name, int type, int length, int gender, std::
     return grading_key_id;
 }
 
+/**
+ * Edits a grading key in the database
+ * @param id The ID of the grading key to edit
+ * @param name The new name of the grading key or "" to keep the same
+ * @param length The new length of the grading key or -1 to keep the same
+ * @param grades A vector of GradingKeyGrade objects
+*/
 int Database::patchGradingKey(int id, String name, int length, std::vector<GradingKeyGrade> grades) {
     String sql = "SELECT * FROM grading_keys WHERE id = " + String(id) + ";";
     sqlite3_stmt* grading_key_stmt;
@@ -923,6 +1022,10 @@ int Database::patchGradingKey(int id, String name, int length, std::vector<Gradi
     return DB_SUCCESS;
 }
 
+/**
+ * Fetches all classes from the database
+ * @return A vector of ClassInfoSimple objects
+*/
 std::vector<ClassInfoSimple> Database::getClasses() {
     std::vector<ClassInfoSimple> classes;
 
@@ -964,6 +1067,11 @@ std::vector<ClassInfoSimple> Database::getClasses() {
     return classes;
 }
 
+/**
+ * Fetches the information for a specific class
+ * @param class_id The ID of the class
+ * @return A ClassInfo object
+*/
 ClassInfo Database::getClassInfo(int class_id) {
     ClassInfo class_info;
 
@@ -1070,6 +1178,11 @@ ClassInfo Database::getClassInfo(int class_id) {
     return class_info;
 }
 
+/**
+ * Deletes a class from the database and all students and runs associated with it
+ * @param class_id The ID of the class to delete
+ * @return A status code defined in database.h
+*/
 int Database::deleteClass(int class_id) {
     String sql = "SELECT id FROM classes where id = " + String(class_id) + ";";
     sqlite3_stmt* class_stmt;
@@ -1086,16 +1199,19 @@ int Database::deleteClass(int class_id) {
     sqlite3_finalize(class_stmt);
 
     sql = "DELETE FROM classes WHERE id = " + String(class_id) + ";";
-    
     if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
         DEBUG_SER_PRINT("Failed to delete class: ");
         DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
         return DB_FAILED;
     }
-
     return DB_SUCCESS;
 }
 
+/**
+ * Creates a new class in the database
+ * @param name The name of the class
+ * @return The ID of the new class, or a status code defined in database.h
+*/
 int Database::putClass(String name) {
     String sql = "SELECT id FROM classes WHERE name = '" + name + "';";
     sqlite3_stmt* class_stmt;
@@ -1125,6 +1241,12 @@ int Database::putClass(String name) {
     return class_id;
 }
 
+/**
+ * Edits a class in the database
+ * @param class_id The ID of the class to edit
+ * @param name The new name of the class
+ * @return A status code defined in database.h
+*/
 int Database::patchClass(int class_id, String name) {
     String sql = "SELECT * FROM classes WHERE id = " + String(class_id) + ";";
     sqlite3_stmt* class_stmt;
@@ -1160,4 +1282,264 @@ int Database::patchClass(int class_id, String name) {
         return DB_FAILED;
     }
     return DB_SUCCESS;
+}
+
+/**
+ * Fetches all students in a class
+ * @param class_id The ID of the class
+ * @return A vector of ClassStudent objects
+*/
+std::vector<ClassStudent> Database::getClassStudents(int class_id) {
+    std::vector<ClassStudent> students;
+
+    String sql = "SELECT * FROM students WHERE class_id = " + String(class_id) + ";";
+    sqlite3_stmt* student_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &student_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(student_stmt);
+        return students;
+    }
+    while (sqlite3_step(student_stmt) == SQLITE_ROW) {
+        ClassStudent student;
+        student.student_id = sqlite3_column_int(student_stmt, 0);
+        student.name = String((const char*) sqlite3_column_text(student_stmt, 1));
+        students.push_back(student);
+    }
+    sqlite3_finalize(student_stmt);
+    return students;
+}
+
+/**
+ * Fetches all class names and IDs
+ * @return A vector of ClassName objects
+*/
+std::vector<ClassName> Database::getClassNames() {
+    std::vector<ClassName> classes;
+
+    String sql = "Select * FROM classes;";
+    sqlite3_stmt* class_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &class_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(class_stmt);
+        return classes;
+    }
+    while (sqlite3_step(class_stmt) == SQLITE_ROW) {
+        ClassName class_name;
+        class_name.class_id = sqlite3_column_int(class_stmt, 0);
+        class_name.name = String((const char*) sqlite3_column_text(class_stmt, 1));
+        classes.push_back(class_name);
+    }
+    sqlite3_finalize(class_stmt);
+    return classes;
+}
+
+/**
+ * Fetches all teachers from the database
+ * @return A vector of TeacherSimple objects
+*/
+std::vector<TeacherSimple> Database::getTeachers() {
+    std::vector<TeacherSimple> teachers;
+
+    String sql = "SELECT * FROM teachers;";
+    sqlite3_stmt* teacher_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &teacher_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(teacher_stmt);
+        return teachers;
+    }
+    while (sqlite3_step(teacher_stmt) == SQLITE_ROW) {
+        TeacherSimple teacher;
+        teacher.name = String((const char*) sqlite3_column_text(teacher_stmt, 1));
+        teacher.teacher_id = sqlite3_column_int(teacher_stmt, 0);
+        teachers.push_back(teacher);
+    }
+    sqlite3_finalize(teacher_stmt);
+    return teachers;
+}
+
+/**
+ * Fetches the information for a specific teacher
+ * @param teacher_id The ID of the teacher
+ * @return A Teacher object; if the teacher is not found, the username will be ""
+*/
+Teacher Database::getTeacher(int teacher_id) {
+    Teacher teacher;
+
+    String sql = "SELECT * FROM teachers WHERE id = " + String(teacher_id) + ";";
+    sqlite3_stmt* teacher_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &teacher_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(teacher_stmt);
+        return teacher;
+    }
+    if (sqlite3_step(teacher_stmt) == SQLITE_ROW) {
+        teacher.name = String((const char*) sqlite3_column_text(teacher_stmt, 1));
+        teacher.username = String((const char*) sqlite3_column_text(teacher_stmt, 2));
+    } else {
+        sqlite3_finalize(teacher_stmt);
+        return teacher;
+    }
+    sqlite3_finalize(teacher_stmt);
+    return teacher;
+}
+
+/**
+ * Deletes a teacher from the database
+ * @param teacher_id The ID of the teacher to delete
+ * @return A status code defined in database.h
+ * @note This function doesn't delete associated runs
+*/
+int Database::deleteTeacher(int teacher_id) {
+    String sql = "SELECT id FROM teachers where id = " + String(teacher_id) + ";";
+    sqlite3_stmt* teacher_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &teacher_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(teacher_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(teacher_stmt) != SQLITE_ROW) {
+        sqlite3_finalize(teacher_stmt);
+        return DB_NOT_FOUND;
+    }
+    sqlite3_finalize(teacher_stmt);
+
+    sql = "DELETE FROM teachers WHERE id = " + String(teacher_id) + ";";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to delete teacher: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+    return DB_SUCCESS;
+}
+
+/**
+ * Creates a new teacher in the database
+ * @param name The name of the teacher
+ * @param username The username of the teacher
+ * @param password The password of the teacher
+ * @return The ID of the new teacher, or a status code defined in database.h
+*/
+int Database::putTeacher(String name, String username, String password) {
+    String sql = "SELECT id FROM teachers WHERE username = '" + username + "';";
+    sqlite3_stmt* teacher_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &teacher_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(teacher_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(teacher_stmt) == SQLITE_ROW) {
+        sqlite3_finalize(teacher_stmt);
+        return DB_CONFLICT;
+    }
+    sqlite3_finalize(teacher_stmt);
+
+    sql = "INSERT INTO teachers (name, username, password, administrator) VALUES ('" + name + "', '" + username + "', '" + password + "', 0);";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to insert teacher: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        if (sqlite3_errcode(this->db) == SQLITE_CONSTRAINT) {
+            return DB_CONFLICT;
+        } else {
+            return DB_FAILED;
+        }
+    }
+    int teacher_id = sqlite3_last_insert_rowid(this->db);
+    return teacher_id;
+}
+
+/**
+ * Edits a teacher in the database
+ * @param teacher_id The ID of the teacher to edit
+ * @param name The new name of the teacher or "" to keep the same
+ * @param username The new username of the teacher or "" to keep the same
+ * @param password The new password of the teacher or "" to keep the same
+ * @return A status code defined in database.h
+*/
+int Database::patchTeacher(int teacher_id, String name, String username, String password) {
+    String sql = "SELECT * FROM teachers WHERE id = " + String(teacher_id) + ";";
+    sqlite3_stmt* teacher_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &teacher_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(teacher_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(teacher_stmt) != SQLITE_ROW) {
+        sqlite3_finalize(teacher_stmt);
+        return DB_NOT_FOUND;
+    }
+    sqlite3_finalize(teacher_stmt);
+
+    sql = "SELECT * FROM teachers WHERE username = '" + username + "';";
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &teacher_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(teacher_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(teacher_stmt) == SQLITE_ROW) {
+        sqlite3_finalize(teacher_stmt);
+        return DB_CONFLICT;
+    }
+    sqlite3_finalize(teacher_stmt);
+
+    sql = "UPDATE teachers SET ";
+    if (name != "") {
+        sql += "name = '" + name + "'";
+    }
+    if (username != "") {
+        if (name != "") {
+            sql += ", ";
+        }
+        sql += "username = '" + username + "'";
+    }
+    if (password != "") {
+        if (name != "" || username != "") {
+            sql += ", ";
+        }
+        sql += "password = '" + password + "'";
+    }
+    sql += " WHERE id = " + String(teacher_id) + ";";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to update teacher: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+    return DB_SUCCESS;
+}
+
+/**
+ * Checks if a username and password are valid
+ * @param username The username to check
+ * @param password The password to check
+ * @return A status code defined in database.h
+*/
+int Database::checkPassword(String username, String password) {
+    String sql = "SELECT * FROM teachers WHERE username = '" + username + "';";
+    sqlite3_stmt* user_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &user_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(user_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(user_stmt) != SQLITE_ROW) {
+        sqlite3_finalize(user_stmt);
+        return DB_NOT_FOUND;
+    }
+    String stored_password = String((const char*) sqlite3_column_text(user_stmt, 3));
+    int admin = sqlite3_column_int(user_stmt, 4);
+    sqlite3_finalize(user_stmt);
+
+    if (password == stored_password) {
+        return admin;
+    } else {
+        return DB_INVALID;
+    }
 }
