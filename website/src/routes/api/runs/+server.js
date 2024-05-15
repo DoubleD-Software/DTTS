@@ -124,3 +124,11 @@ export async function DELETE({url}) {
     console.log('Deleted run with id: ' + runId)
     return new Response(null, {status: 200});
 }
+
+/** @type {import('./$types').RequestHandler} */
+export async function PUT({request}) {
+    let data = await request.json();
+    console.log('Run PUT request')
+    console.log(data);
+    return new Response(null, {status: 200});
+}

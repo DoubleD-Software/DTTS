@@ -3,7 +3,19 @@ import {json} from "@sveltejs/kit";
 /** @type {import('./$types').RequestHandler} */
 export async function GET({url}) {
     console.log('GradingKey GET request id: ' + url.searchParams.get('id'))
-    if (url.searchParams.has('id')) {
+    if (url.searchParams.has('type') && url.searchParams.has('length')) {
+        return json(
+            {
+                "male": {
+                    "0": "8 Sprint (m)",
+                    "1": "9 Sprint (m)"
+                },
+                "female": {
+                    "2": "8 Sprint (w)",
+                    "3": "9 Sprint (w)"
+                }
+            });
+    } else if (url.searchParams.has('id')) {
         if (url.searchParams.get('id') === '2') {
             return new Response(null, {status: 404});
         }

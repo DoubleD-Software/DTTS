@@ -11,6 +11,12 @@ export async function GET({url}) {
                 0: "8o",
                 1: "8c"
             });
+    } else if (id !== null && url.searchParams.has('studentsOnly')) {
+        return json(
+            {
+                "0": "Bali Schmidt",
+                "1": "Ali Baba"
+            });
     } else if (id !== null) {
         return json(
             {

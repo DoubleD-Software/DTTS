@@ -23,7 +23,11 @@
             return;
         }
         if (first === 0 && second === 0) {
-            message = 'Die Zeit darf nicht null sein!';
+            message = 'Die Zeit darf nicht 0 sein!';
+            return;
+        }
+        if (first < 0 || second < 0) {
+            message = 'Die Zeit muss größer als 0 sein!';
             return;
         }
         if (type === 0) {
