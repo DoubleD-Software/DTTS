@@ -8,8 +8,9 @@
  * Constructor for the DTTSRestApi class.
  * @param db Pointer to the database object.
 */
-DTTSRestApi::DTTSRestApi(Database *db) {
+DTTSRestApi::DTTSRestApi(Database *db, RunHandler *run_handler) {
     this->db = db;
+    this->run_handler = run_handler;
 }
 
 /**
@@ -29,7 +30,7 @@ void DTTSRestApi::getRun(AsyncWebServerRequest *request) {
             request_result = 404;
         } else {
             for (int i = 0; i < runs.size(); i++) {
-                String index = String(i);
+                String index = String(runs[i].run_id);
                 doc[index]["type"] = runs[i].type;
                 doc[index]["length"] = runs[i].length;
                 doc[index]["teacher"] = runs[i].teacher;
@@ -68,8 +69,8 @@ void DTTSRestApi::getRun(AsyncWebServerRequest *request) {
             doc["date"] = run_info.date;
             doc["teacher"] = run_info.teacher;
             doc["class"] = run_info.class_name;
-            doc["grading_key_m_id"] = run_info.grading_key_m;
-            doc["grading_key_f_id"] = run_info.grading_key_f;
+            doc["grading_key_male"] = run_info.grading_key_m;
+            doc["grading_key_female"] = run_info.grading_key_f;
             doc["avg_grade"] = String(run_info.avg_grade, 2);
             doc["avg_time"] = run_info.avg_time;
             for (int i = 0; i < run_info.students.size(); i++) {
@@ -124,7 +125,7 @@ void DTTSRestApi::putRun(AsyncWebServerRequest *request, String data) {
     if (doc.isNull()) {
         request_result = 400;
     } else {
-        if (doc.containsKey("type") && doc.containsKey("length") && doc.containsKey("date") && doc.containsKey("class_id") && doc.containsKey("teacher_id") && doc.containsKey("grading_key_male_id") && doc.containsKey("grading_key_female_id") && doc.containsKey("laps") && doc.containsKey("participants")) {
+        if (doc.containsKey("type") && doc.containsKey("length") && doc.containsKey("date") && doc.containsKey("class_id") && doc.containsKey("grading_key_male_id") && doc.containsKey("grading_key_female_id") && doc.containsKey("laps") && doc.containsKey("participants")) {
             std::vector<int> participants;
             for (int i = 0; i < doc["participants"].size(); i++) {
                 participants.push_back(doc["participants"][i]);
@@ -133,7 +134,7 @@ void DTTSRestApi::putRun(AsyncWebServerRequest *request, String data) {
             int length = doc["length"];
             int date = doc["date"];
             int class_id = doc["class_id"];
-            int teacher_id = doc["teacher_id"];
+            int teacher_id = logged_in_user_id;
             int grading_key_m_id = doc["grading_key_male_id"];
             int grading_key_f_id = doc["grading_key_female_id"];
             String laps_s = doc["laps"];
@@ -142,7 +143,7 @@ void DTTSRestApi::putRun(AsyncWebServerRequest *request, String data) {
             int run_id = db->putRun(type, date, class_id, grading_key_m_id, grading_key_f_id, teacher_id, length, laps, participants);
 
             if (run_id != DB_FAILED) {
-                this->last_run_id = run_id;
+                run_handler->setActiveRun(run_id);
             } else {
                 request_result = 500;
             }
@@ -522,6 +523,7 @@ void DTTSRestApi::getClasses(AsyncWebServerRequest *request) {
             request_result = 404;
         } else {
             doc["name"] = class_info.name;
+            doc["global_avg_grade"] = String(class_info.global_avg_grade, 2);
             doc["sprint"]["avg_grade"] = String(class_info.sprint_avg_grade, 2);
             doc["sprint"]["avg_time"] = class_info.sprint_avg_time;
             doc["lap_run"]["avg_grade"] = String(class_info.lap_run_avg_grade, 2);
@@ -842,9 +844,10 @@ void DTTSRestApi::authenticate(AsyncWebServerRequest *request, String data) {
             String username = doc["username"];
             String password = doc["password"];
 
-            access_level = db->checkPassword(username, password); 
+            UserAuth auth = db->checkPassword(username, password);
+            logged_in_user_id = auth.user_id;
 
-            if (access_level >= 0) {
+            if (auth.access_level >= 0) {
                 user_logged_in = true;
                 this->current_session_id = random(0xFFFF, 0x7FFFFFFF);
                 
@@ -860,6 +863,37 @@ void DTTSRestApi::authenticate(AsyncWebServerRequest *request, String data) {
         }
     }
     request->send(request_result, "application/json", "{}");
+}
+
+/**
+ * GET request handler for th /api/active endpoint. This function returns information about the active run.
+ * @param request Pointer to the request object.
+*/
+void DTTSRestApi::getActive(AsyncWebServerRequest *request) {
+    if (checkAuth(request) == ACCESS_DENIED) return;
+
+    JsonDocument doc;
+    int request_result = 200;
+
+    int run_id = run_handler->getActiveRunId();
+
+    if (run_id == RUN_NOT_ACTIVE) {
+        request_result = 404;
+    } else if (run_id == RUN_ACTIVE_TAG) {
+    } else {
+        RunInfoActive run_info = db->getRunInfoActive(run_id);
+        doc["type"] = run_info.type;
+        doc["length"] = run_info.length;
+        doc["date"] = run_info.date;
+        doc["class"] = run_info.class_name;
+        doc["grading_key_male"] = run_info.grading_key_m;
+        doc["grading_key_female"] = run_info.grading_key_f;
+        doc["teacher"] = run_info.teacher_name;
+    }
+
+    String json_output;
+    serializeJson(doc, json_output);
+    request->send(request_result, "application/json", json_output);
 }
 
 /**

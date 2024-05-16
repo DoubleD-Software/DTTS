@@ -2,8 +2,7 @@
 #define DEBUG_H
 
 #include <Arduino.h>
-
-#define DEBUG
+#include <definitions.h>
 
 #ifdef DEBUG
     #define DEBUG_SER_INIT(baudrate) Serial.begin(baudrate)

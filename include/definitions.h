@@ -1,8 +1,6 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
-#include <rfid.h>
-
 #define VERSION "0.1.0"
 
 #define OLED_SDA 33
@@ -13,13 +11,17 @@
 #define NUM_DISP_CLK 25
 #define NUM_DISP_DIO 26
 
+#define BUTTON_PIN 34
+
 #define SD_CS 5
 
-#define RFID_REGION RFID_REGION_EU
+#define RFID_BAUD 115200
 
 #define DB_PATH "/sd/dtts.db"
 
 #define ADMIN_USERNAME "admin"
 #define ADMIN_PASSWORD "admin"
+
+#define DEBUG
 
 #endif

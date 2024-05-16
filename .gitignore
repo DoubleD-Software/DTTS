@@ -2,3 +2,4 @@
 .vscode
 .idea
 data/website
+website/package-lock.json

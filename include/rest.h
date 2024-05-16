@@ -6,6 +6,7 @@
 #include <ESPAsyncWebServer.h>
 #include <database.h>
 #include <globals.h>
+#include <runlogic.h>
 
 #define ACCESS_USER 0
 #define ACCESS_ADMIN 1
@@ -15,7 +16,7 @@
 
 class DTTSRestApi {
     public:
-        DTTSRestApi(Database *db);
+        DTTSRestApi(Database *db, RunHandler *run_handler);
         void getRun(AsyncWebServerRequest *request);
         void deleteRun(AsyncWebServerRequest *request);
         void putRun(AsyncWebServerRequest *request, String data);
@@ -37,12 +38,14 @@ class DTTSRestApi {
         void patchTeacher(AsyncWebServerRequest *request, String data);
         void whoAmI(AsyncWebServerRequest *request);
         void authenticate(AsyncWebServerRequest *request, String data);
+        void getActive(AsyncWebServerRequest *request);
         
     private:
         Database *db;
-        int last_run_id = 0;
+        RunHandler *run_handler;
         int current_session_id = 0;
         bool user_logged_in = false;
+        int logged_in_user_id;
         int access_level = ACCESS_USER;
 
         int checkAuth(AsyncWebServerRequest *request);

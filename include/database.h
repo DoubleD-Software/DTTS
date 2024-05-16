@@ -198,6 +198,26 @@ typedef struct {
     String username;
 } Teacher;
 
+typedef struct {
+    int type = 0;
+    int length = 0;
+    int date = 0;
+    String class_name;
+    String grading_key_m;
+    String grading_key_f;
+    String teacher_name;
+} RunInfoActive;
+
+typedef struct {
+    int student_id = 0;
+    String student_name;
+} RunParticipant;
+
+typedef struct {
+    int access_level = -1;
+    int user_id = 0;
+} UserAuth;
+
 class Database {
     public:
         Database(String db_path);
@@ -231,7 +251,9 @@ class Database {
         int deleteTeacher(int teacher_id);
         int putTeacher(String name, String username, String password);
         int patchTeacher(int id, String name, String username, String password);
-        int checkPassword(String username, String password);
+        UserAuth checkPassword(String username, String password);
+        RunInfoActive getRunInfoActive(int run_id);
+        std::vector<RunParticipant> getRunParticipants(int run_id);
 
     private:
         void createTables();

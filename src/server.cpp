@@ -1,13 +1,13 @@
 #include <server.h>
 
 /**
- * This file contains the top level server implementation that interacts with the rest_api and websockets
+ * This file contains the top level server implementation that interacts with the rest api and websockets
  
 
  * Constructor for the DTTSServer class.
  * @param db The database object to use for the server.
 */
-DTTSServer::DTTSServer(Database *db) : server(SERVER_HTTP_PORT), rest_api(db) {
+DTTSServer::DTTSServer(Database *db, OLED *oled, TM1637 *num_disp) : server(SERVER_HTTP_PORT), ws(WS_URL), run_handler(db, &ws, oled, num_disp), rest_api(db, &run_handler) {
 }
 
 /**
@@ -16,9 +16,8 @@ DTTSServer::DTTSServer(Database *db) : server(SERVER_HTTP_PORT), rest_api(db) {
 void DTTSServer::begin() {
     DEBUG_SER_PRINTLN("Starting server...");
 
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(SD, "/web/index.html", "text/html");
-    });
+    run_handler.init();
+
     server.on("/api/runs", HTTP_GET, [&](AsyncWebServerRequest *request) {
         rest_api.getRun(request);
     });
@@ -172,8 +171,38 @@ void DTTSServer::begin() {
             rest_api.authenticate(request, data_str);
         }
     );
-    
-    server.serveStatic("/", SD, "/web");
+    server.on("/api/active", HTTP_GET, [&](AsyncWebServerRequest *request) {
+        rest_api.getActive(request);
+    });
+
+    String htmlEndpoints[] = {
+        "/runs/view", "/runs/edit", "/runs/new", "/runs", 
+        "/students/view", "/students/edit", "/students/new", "/students", 
+        "/classes/view", "/classes/edit", "/classes/new", "/classes", 
+        "/gradingkeys/view", "/gradingkeys/edit", "/gradingkeys/new", "/gradingkeys", 
+        "/teachers/view", "/teachers/edit", "/teachers/new", "/teachers"
+    };
+
+    for (String endpoint : htmlEndpoints) {
+        String endpointPath = "/website" + endpoint + ".html";
+        server.serveStatic(endpoint.c_str(), SD, endpointPath.c_str());
+    }
+
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send(SD, "/website/index.html", "text/html");
+    });
+    server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->redirect("/");
+    });
+    server.serveStatic("/_app", SD, "/website/_app");
+    server.serveStatic("/favicon.webp", SD, "/website/favicon.webp");
+
+    server.addHandler(&ws);
+
     server.begin();
     DEBUG_SER_PRINTLN("Server started.");
+}
+
+void DTTSServer::handleRunLogic() {
+    run_handler.handle();
 }

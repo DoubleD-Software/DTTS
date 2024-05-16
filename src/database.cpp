@@ -152,7 +152,7 @@ void Database::createTables() {
         }
     }
 
-    String sql = "SELECT id FROM teachers WHERE name = '" + String(ADMIN_USERNAME) + "';";
+    String sql = "SELECT id FROM teachers WHERE administrator = 1;";
     sqlite3_stmt* stmt;
     if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &stmt, 0) != SQLITE_OK) {
         DEBUG_SER_PRINT("Failed to prepare statement: ");
@@ -1676,28 +1676,158 @@ int Database::patchTeacher(int teacher_id, String name, String username, String 
  * Checks if a username and password are valid
  * @param username The username to check
  * @param password The password to check
- * @return A status code defined in database.h
+ * @return A struct containing the access level and teacher id
 */
-int Database::checkPassword(String username, String password) {
+UserAuth Database::checkPassword(String username, String password) {
+    UserAuth auth;
+
     String sql = "SELECT * FROM teachers WHERE username = '" + username + "';";
     sqlite3_stmt* user_stmt;
     if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &user_stmt, 0) != SQLITE_OK) {
         DEBUG_SER_PRINT("Failed to prepare statement: ");
         DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
         sqlite3_finalize(user_stmt);
-        return DB_FAILED;
+        return auth;
     }
     if (sqlite3_step(user_stmt) != SQLITE_ROW) {
         sqlite3_finalize(user_stmt);
-        return DB_NOT_FOUND;
+        return auth;
     }
     String stored_password = String((const char*) sqlite3_column_text(user_stmt, 3));
-    int admin = sqlite3_column_int(user_stmt, 4);
+    auth.access_level = sqlite3_column_int(user_stmt, 4);
+    auth.user_id = sqlite3_column_int(user_stmt, 0);
     sqlite3_finalize(user_stmt);
 
-    if (password == stored_password) {
-        return admin;
-    } else {
-        return DB_INVALID;
+    return auth;
+}
+
+/**
+ * Returns the run info for an active run that is in the state of being ran or the tag assignment state
+ * @param run_id The ID of the run
+ * @return A RunInfoActive object
+*/
+RunInfoActive Database::getRunInfoActive(int run_id) {
+    RunInfoActive run_info;
+
+    String sql = "SELECT * FROM runs WHERE id = " + String(run_id) + ";";
+    sqlite3_stmt* run_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &run_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(run_stmt);
+        return run_info;
     }
+    if (sqlite3_step(run_stmt) == SQLITE_ROW) {
+        run_info.type = sqlite3_column_int(run_stmt, 1);
+        run_info.date = sqlite3_column_int(run_stmt, 2);
+        run_info.length = sqlite3_column_int(run_stmt, 7);
+    } else {
+        sqlite3_finalize(run_stmt);
+        return run_info;
+    }
+    int class_id = sqlite3_column_int(run_stmt, 3);
+    int grading_key_m_id = sqlite3_column_int(run_stmt, 4);
+    int grading_key_f_id = sqlite3_column_int(run_stmt, 5);
+    int teacher_id = sqlite3_column_int(run_stmt, 6);
+    sqlite3_finalize(run_stmt);
+
+    sql = "SELECT name FROM classes WHERE id = " + String(class_id) + ";";
+    sqlite3_stmt* class_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &class_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(class_stmt);
+        return run_info;
+    }
+    if (sqlite3_step(class_stmt) == SQLITE_ROW) {
+        run_info.class_name = String((const char*) sqlite3_column_text(class_stmt, 0));
+    } else {
+        run_info.class_name = UNKNOWN_NAME;
+    }
+    sqlite3_finalize(class_stmt);
+
+    sql = "SELECT * FROM grading_keys WHERE id = " + String(grading_key_m_id) + ";";
+    sqlite3_stmt* grading_key_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &grading_key_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(grading_key_stmt);
+        return run_info;
+    }
+    if (sqlite3_step(grading_key_stmt) == SQLITE_ROW) {
+        run_info.grading_key_m = String((const char*) sqlite3_column_text(grading_key_stmt, 1));
+    } else {
+        run_info.grading_key_m = UNKNOWN_NAME;
+    }
+    sqlite3_finalize(grading_key_stmt);
+
+    sql = "SELECT * FROM grading_keys WHERE id = " + String(grading_key_f_id) + ";";
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &grading_key_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(grading_key_stmt);
+        return run_info;
+    }
+    if (sqlite3_step(grading_key_stmt) == SQLITE_ROW) {
+        run_info.grading_key_f = String((const char*) sqlite3_column_text(grading_key_stmt, 1));
+    } else {
+        run_info.grading_key_f = UNKNOWN_NAME;
+    }
+    sqlite3_finalize(grading_key_stmt);
+
+    sql = "SELECT * FROM teachers WHERE id = " + String(teacher_id) + ";";
+    sqlite3_stmt* teacher_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &teacher_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(teacher_stmt);
+        return run_info;
+    }
+    if (sqlite3_step(teacher_stmt) == SQLITE_ROW) {
+        run_info.teacher_name = String((const char*) sqlite3_column_text(teacher_stmt, 1));
+    } else {
+        run_info.teacher_name = UNKNOWN_NAME;
+    }
+    sqlite3_finalize(teacher_stmt);
+
+    return run_info;
+}
+
+/**
+ * Fetches the participants ids for a run
+ * @param run_id The ID of the run
+ * @return A vector of participant IDs
+*/
+std::vector<RunParticipant> Database::getRunParticipants(int run_id) {
+    std::vector<RunParticipant> participants;
+
+    String sql = "SELECT * FROM participants WHERE run_id = " + String(run_id) + ";";
+    sqlite3_stmt* participant_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &participant_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(participant_stmt);
+        return participants;
+    }
+    while (sqlite3_step(participant_stmt) == SQLITE_ROW) {
+        RunParticipant participant;
+        participant.student_id = sqlite3_column_int(participant_stmt, 1);
+        sql = "SELECT name FROM students WHERE id = " + String(participant.student_id) + ";";
+        sqlite3_stmt* student_stmt;
+        if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &student_stmt, 0) != SQLITE_OK) {
+            DEBUG_SER_PRINT("Failed to prepare statement: ");
+            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+            sqlite3_finalize(student_stmt);
+            break;
+        }
+        if (sqlite3_step(student_stmt) == SQLITE_ROW) {
+            participant.student_name = String((const char*) sqlite3_column_text(student_stmt, 0));
+        } else {
+            participant.student_name = UNKNOWN_NAME;
+        }
+        sqlite3_finalize(student_stmt);
+        participants.push_back(participant);
+    }
+    sqlite3_finalize(participant_stmt);
+    return participants;
 }
