@@ -3,6 +3,7 @@
     import {PUBLIC_API_URL} from "$env/static/public";
     import DateSelector from "$lib/components/DateSelector.svelte";
     import RunListEntry from "$lib/components/RunListEntry.svelte";
+    import AddIcon from "$lib/icons/AddIcon.svelte";
 
     let selectedDate = new Date();
 
@@ -46,4 +47,8 @@
         <p class="text-center text-xl">Keine Läufe an diesem Tag.</p>
     {/if}
 </div>
+
+<a href="/runs/new" class="fixed bottom-8 right-8 bg-cf-green scale-[130%] p-3 fill-black rounded-2xl shadow-lg flex items-center justify-center text-3xl">
+    <div class="scale-150"><AddIcon /></div>
+</a>
 

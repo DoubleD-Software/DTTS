@@ -62,8 +62,8 @@
         });
         if (response.ok) {
             let json = await response.json();
-            maleGradingKeys = json.male;
-            femaleGradingKeys = json.female;
+            maleGradingKeys = json.male === undefined ? {} : json.male;
+            femaleGradingKeys = json.female === undefined ? {} : json.female;
         } else if (response.status === 401) {
             window.location.href = '/';
         } else {
@@ -126,7 +126,7 @@
         });
 
         if (response.ok) {
-            // window.location.href = '/active/tags';
+            window.location.href = '/active/tags';
         } else if (response.status === 401) {
             window.location.href = '/';
         } else {

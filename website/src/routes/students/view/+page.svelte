@@ -22,6 +22,9 @@
 
         if (response.ok) {
             student = await response.json();
+            if (student.runs === undefined) {
+                student.runs = {};
+            }
         } else if (response.status === 401) {
             window.location.href = '/';
         } else if (response.status === 404) {

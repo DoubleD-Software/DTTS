@@ -6,6 +6,7 @@
     import Woman from "$lib/icons/Woman.svelte";
     import Trash from "$lib/icons/Trash.svelte";
     import { PUBLIC_API_URL } from "$env/static/public";
+    import {onMount} from "svelte";
 
     export let data;
     let json = data.data;
@@ -29,6 +30,12 @@
             }
         });
     }
+
+    onMount(() => {
+        if (json.students === undefined) {
+            json.students = {};
+        }
+    });
 </script>
 
 <div class="text-white flex flex-col p-5 text-lg relative">

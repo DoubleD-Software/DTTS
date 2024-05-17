@@ -16,7 +16,7 @@
     let runs = true;
     let showModal = false;
 
-    async function getStudent() {
+    async function getClass() {
         const response = await fetch(PUBLIC_API_URL + '/classes?id=' + classId, {
             method: 'GET',
             credentials: 'include'
@@ -24,6 +24,12 @@
 
         if (response.ok) {
             classEntry = await response.json();
+            if (classEntry.runs === undefined) {
+                classEntry.runs = {};
+            }
+            if (classEntry.students === undefined) {
+                classEntry.students = {};
+            }
         } else if (response.status === 401) {
             window.location.href = '/';
         } else if (response.status === 404) {
@@ -52,7 +58,7 @@
     }
 
     onMount(async () => {
-        await getStudent();
+        await getClass();
         const selectors = document.querySelectorAll('.selector');
         selectors.forEach(selector => {
             selector.addEventListener('click', function () {

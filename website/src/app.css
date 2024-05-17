@@ -49,3 +49,8 @@ body {
   margin-left: auto;
   position: absolute;
 }
+
+@font-face {
+  font-family: digitalnumbers;
+  src: url('/DigitalNumbers-reduced.ttf');
+}

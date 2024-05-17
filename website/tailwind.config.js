@@ -14,6 +14,9 @@ const config = {
 				'cf-green': '#05FF00',
 				'warn-red': '#FF3D3D',
 			},
+			fontFamily: {
+				'dg': ['digitalnumbers', ...fontFamily.sans],
+			},
 		}
 	},
 };

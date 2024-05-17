@@ -19,8 +19,6 @@ export async function load({ url }) {
     if (response.status === 401) {
         throw redirect(302, '/');
     } else if (response.status === 404 || response.status === 406) {
-        console.log('404 or 406' + studentId)
-        console.log('/runs' + (studentId === null ? '' : `/view?run=${runId}`));
         throw redirect(302, '/runs' + (studentId === null ? '' : `/view?id=${runId}`));
     }
 
