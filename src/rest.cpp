@@ -30,6 +30,8 @@ void DTTSRestApi::getRun(AsyncWebServerRequest *request) {
             request_result = 404;
         } else {
             for (int i = 0; i < runs.size(); i++) {
+                if (runs[i].avg_grade == 0 || runs[i].avg_time == 0) continue;
+
                 String index = String(runs[i].run_id);
                 doc[index]["type"] = runs[i].type;
                 doc[index]["length"] = runs[i].length;
@@ -529,6 +531,8 @@ void DTTSRestApi::getClasses(AsyncWebServerRequest *request) {
             doc["lap_run"]["avg_grade"] = String(class_info.lap_run_avg_grade, 2);
             doc["lap_run"]["avg_time"] = class_info.lap_run_avg_time;
             for (int i = 0; i < class_info.runs.size(); i++) {
+                if (class_info.runs[i].avg_grade == 0 || class_info.runs[i].avg_grade == 0) continue;
+
                 String index = String(class_info.runs[i].run_id);
                 doc["runs"][index]["type"] = class_info.runs[i].type;
                 doc["runs"][index]["length"] = class_info.runs[i].length;
@@ -846,8 +850,9 @@ void DTTSRestApi::authenticate(AsyncWebServerRequest *request, String data) {
 
             UserAuth auth = db->checkPassword(username, password);
             logged_in_user_id = auth.user_id;
+            access_level = auth.access_level;
 
-            if (auth.access_level >= 0) {
+            if (access_level >= 0) {
                 user_logged_in = true;
                 this->current_session_id = random(0xFFFF, 0x7FFFFFFF);
                 
@@ -879,8 +884,7 @@ void DTTSRestApi::getActive(AsyncWebServerRequest *request) {
 
     if (run_id == RUN_NOT_ACTIVE) {
         request_result = 404;
-    } else if (run_id == RUN_ACTIVE_TAG) {
-    } else {
+    } else if (run_id != RUN_ACTIVE_TAG) {
         RunInfoActive run_info = db->getRunInfoActive(run_id);
         doc["type"] = run_info.type;
         doc["length"] = run_info.length;
@@ -893,6 +897,7 @@ void DTTSRestApi::getActive(AsyncWebServerRequest *request) {
 
     String json_output;
     serializeJson(doc, json_output);
+    if (json_output == "null") json_output = "";
     request->send(request_result, "application/json", json_output);
 }
 

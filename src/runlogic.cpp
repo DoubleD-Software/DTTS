@@ -30,13 +30,17 @@ void RunHandler::init() {
             this->client = client;
             if (getActiveRunId() == RUN_ACTIVE_TAG) {
                 tag_assign_active = true;                       // When a client connects the tag assignment is started
+                if (last_tag_tx != "") {
+                    ws->textAll(last_tag_tx);
+                }
             } else if (getActiveRunId() != RUN_NOT_ACTIVE) {
                 if (run_in_progress) {
                     String client_str = "1 " + String(run_time_elapsed);
                     ws->textAll(client_str);
                 }
             } else {
-                client->close(); // No reason for ws connection = disconnect
+                ws->textAll("4");
+                client->close(); // No reason for ws connection, send 4 to indicate the end of a run in case there is still an active one
             }
         } else if(type == WS_EVT_DISCONNECT) {
             DEBUG_SER_PRINT("Websocket client disconnected: ");
@@ -90,6 +94,8 @@ void RunHandler::setActiveRun(int run_id, int type) {
     run_state = RUN_ACTIVE_TAG;
     tag_assign_active = false;
     dtts_armed = false;
+    run_in_progress = false;
+    last_tag_tx = "";
 
     participants = db->getRunParticipants(run_id);
     tag_assignments.clear();
@@ -122,7 +128,18 @@ void RunHandler::handle() {
     ws->cleanupClients();
     if (run_active) {
         if (dtts_armed) {
-            while (digitalRead(BUTTON_PIN) == HIGH);
+            while (digitalRead(BUTTON_PIN) == HIGH) {
+                if (ws_data_received && last_ws_rx == "0") {
+                    ws->textAll("3");
+                    ws_data_received = false;
+                    ws->closeAll();
+                    oled->clear();
+                    oled->print("Lauf abge-brochen!", 2);
+                    run_active = false;
+                    db->deleteRun(active_run_id);
+                    return;
+                }
+            }
             run_in_progress = true;
             ws->textAll("1 0");
             if (active_run_type == RUN_TYPE_SPRINT) {
@@ -186,6 +203,7 @@ void RunHandler::startTagAssignment() {
         }
 
         client_str += String(participants[participant_number].student_name);
+        last_tag_tx = client_str;
         ws->textAll(client_str);
         while (true) {
             RfidEpc tag = readRfidTag(true);
@@ -231,6 +249,7 @@ void RunHandler::startTagAssignment() {
     tag_assign_active = false;
     dtts_armed = true;
     run_state = RUN_ACTIVE;
+    ws->closeAll();
     num_disp->displayString("------"); // Maybe an animation in the future
 }
 
@@ -285,14 +304,34 @@ void RunHandler::runSprint() {
             
             last_ws_send = millis();
         }
+        if (ws_data_received && last_ws_rx == "0") {
+            ws->textAll("3");
+            ws_data_received = false;
+            ws->closeAll();
+            oled->clear();
+            oled->print("Lauf abge-brochen!", 2);
+            run_active = false;
+            db->deleteRun(active_run_id);
+
+            clearRfidBuf(false, false);
+            Serial2.write(stop_multi, sizeof(stop_multi));
+            DEBUG_SER_PRINT("Stopping RFID multi read:");
+            clearRfidBuf();
+            return;
+        }
     }
     String client_str = "4 " + String(active_run_id);
     ws->textAll(client_str);
     ws->closeAll();
     oled->clear();
-    oled->print("Run done!", 2);
+    oled->print("Lauf ende!", 2);
     db->insertSprintResults(active_run_id, finishers);
     run_active = false;
+
+    clearRfidBuf(false, false);
+    Serial2.write(stop_multi, sizeof(stop_multi));
+    DEBUG_SER_PRINT("Stopping RFID multi read:");
+    clearRfidBuf();
 }
 
 /**

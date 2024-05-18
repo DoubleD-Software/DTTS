@@ -180,7 +180,8 @@ void DTTSServer::begin() {
         "/students/view", "/students/edit", "/students/new", "/students", 
         "/classes/view", "/classes/edit", "/classes/new", "/classes", 
         "/gradingkeys/view", "/gradingkeys/edit", "/gradingkeys/new", "/gradingkeys", 
-        "/teachers/view", "/teachers/edit", "/teachers/new", "/teachers"
+        "/teachers/view", "/teachers/edit", "/teachers/new", "/teachers",
+        "/active/tags", "/active/dash",
     };
 
     for (String endpoint : htmlEndpoints) {
@@ -196,6 +197,7 @@ void DTTSServer::begin() {
     });
     server.serveStatic("/_app", SD, "/website/_app");
     server.serveStatic("/favicon.webp", SD, "/website/favicon.webp");
+    server.serveStatic("/DigitalNumbers-reduced.ttf", SD, "/website/DigitalNumbers-reduced.ttf");
 
     server.addHandler(&ws);
 

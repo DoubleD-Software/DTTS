@@ -37,6 +37,7 @@ class RunHandler {
         std::vector<RfidEpc> tag_assignments;
         std::vector<FinisherSprint> finishers;
         String last_ws_rx = "";
+        String last_tag_tx = "";
 
         static const uint8_t read_multi[];
         static const uint8_t stop_multi[];

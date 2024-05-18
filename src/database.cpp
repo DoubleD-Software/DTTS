@@ -170,6 +170,39 @@ void Database::createTables() {
         }
     }
     sqlite3_finalize(stmt);
+
+    // Cleanup any invalid runs, like runs with no results
+    sql = "SELECT * FROM runs;";
+    sqlite3_stmt *run_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &run_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(run_stmt);
+        sysHalt(DB_CREATE_FAILED, "Failed to cleanup db.");
+    }
+
+    while (sqlite3_step(run_stmt) == SQLITE_ROW) {
+        int run_id = sqlite3_column_int(run_stmt, 0);
+        sql = "SELECT * FROM results WHERE run_id = " + String(run_id) + ";";
+        sqlite3_stmt *result_stmt;
+        if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &result_stmt, 0) != SQLITE_OK) {
+            DEBUG_SER_PRINT("Failed to prepare statement: ");
+            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+            sqlite3_finalize(result_stmt);
+            sysHalt(DB_CREATE_FAILED, "Failed to cleanup db.");
+        }
+        if (sqlite3_step(result_stmt) != SQLITE_ROW) {
+            DEBUG_SER_PRINTLN("Deleting invalid run: " + String(run_id));
+            sql = "DELETE FROM runs WHERE id = " + String(run_id) + ";";
+            if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+                DEBUG_SER_PRINT("Failed to delete run: ");
+                DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+                sysHalt(DB_CREATE_FAILED, "Failed to cleanup db.");
+            }
+        }
+        sqlite3_finalize(result_stmt);
+    }
+    sqlite3_finalize(run_stmt);
 }
 
 /**
@@ -702,7 +735,13 @@ StudentInfo Database::getStudentInfo(int student_id) {
             student.lap_run_avg_grade = lap_run_total_grade / lap_run_num_results;
             student.lap_run_avg_time = lap_run_total_time / lap_run_num_results;
         }
-        student.global_avg_grade = (student.sprint_avg_grade + student.lap_run_avg_grade) / 2;
+        if (student.sprint_avg_grade == 0) {
+            student.global_avg_grade = student.lap_run_avg_grade;
+        } else if (student.lap_run_avg_grade == 0) {
+            student.global_avg_grade = student.sprint_avg_grade;
+        } else {
+            student.global_avg_grade = (student.sprint_avg_grade + student.lap_run_avg_grade) / 2;
+        }
         sqlite3_finalize(result_stmt);
 
         String run_sql = "SELECT * FROM runs WHERE class_id = " + String(sqlite3_column_int(student_stmt, 3)) + ";";
@@ -715,11 +754,6 @@ StudentInfo Database::getStudentInfo(int student_id) {
         }
         while (sqlite3_step(run_stmt) == SQLITE_ROW) {
             StudentInfoRun run;
-
-            run.run_id = sqlite3_column_int(run_stmt, 0);
-            run.type = sqlite3_column_int(run_stmt, 1);
-            run.length = sqlite3_column_int(run_stmt, 7);
-            run.date = sqlite3_column_int(run_stmt, 2);
             
             sqlite3_stmt* result_stmt;
             String result_sql = "SELECT * FROM results WHERE run_id = " + String(sqlite3_column_int(run_stmt, 0)) + " AND student_id = " + String(student_id) + ";";
@@ -730,14 +764,15 @@ StudentInfo Database::getStudentInfo(int student_id) {
                 break;
             }
             if (sqlite3_step(result_stmt) == SQLITE_ROW) {
+                run.run_id = sqlite3_column_int(run_stmt, 0);
+                run.type = sqlite3_column_int(run_stmt, 1);
+                run.length = sqlite3_column_int(run_stmt, 7);
+                run.date = sqlite3_column_int(run_stmt, 2);
                 run.grade = sqlite3_column_double(result_stmt, 6);
                 run.time = sqlite3_column_int(result_stmt, 3);
-            } else {
-                run.grade = 0;
-                run.time = 0;
+                student.runs.push_back(run);
             }
             sqlite3_finalize(result_stmt);
-            student.runs.push_back(run);
         }
     }
 
@@ -1264,7 +1299,13 @@ ClassInfo Database::getClassInfo(int class_id) {
         class_info.sprint_avg_time = sqlite3_column_int(class_stmt, 3);
         class_info.lap_run_avg_grade = sqlite3_column_double(class_stmt, 4);
         class_info.lap_run_avg_time = sqlite3_column_int(class_stmt, 5);
-        class_info.global_avg_grade = (class_info.sprint_avg_grade + class_info.lap_run_avg_grade) / 2;
+        if (class_info.sprint_avg_grade == 0) {
+            class_info.global_avg_grade = class_info.lap_run_avg_grade;
+        } else if (class_info.lap_run_avg_grade == 0) {
+            class_info.global_avg_grade = class_info.sprint_avg_grade;
+        } else {
+            class_info.global_avg_grade = (class_info.sprint_avg_grade + class_info.lap_run_avg_grade) / 2;
+        }
     } else {
         sqlite3_finalize(class_stmt);
         return class_info;
@@ -1990,7 +2031,7 @@ int Database::insertSprintResults(int run_id, std::vector<FinisherSprint> finish
         int gender = sqlite3_column_int(student_stmt, 0);
         sqlite3_finalize(student_stmt);
 
-        double grade = 0;
+        double grade = 6;
 
         if (gender == GENDER_TYPE_MALE) {
             int time_diff = INT32_MAX;
