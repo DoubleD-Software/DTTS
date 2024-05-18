@@ -107,7 +107,7 @@
 <div class="p-5 text-white mb-[3rem]">
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Name</p>
-        <input id="name" type="text" placeholder="Max Mustermann" class="input-tx">
+        <input id="name" type="text" placeholder="9 Sprint (m)" class="input-tx">
     </div>
     <p class="block text-xl mb-1 text-tx-gray">Länge</p>
     <div class="relative flex items-center justify-center w-full">

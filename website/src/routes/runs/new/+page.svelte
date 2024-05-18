@@ -6,12 +6,12 @@
     import Woman from "$lib/icons/Woman.svelte";
     import {formatDate, dateToJulian} from "$lib/util.js";
     import LockedIcon from "$lib/icons/LockedIcon.svelte";
+    import LengthModal from "$lib/components/LengthModal.svelte";
 
     let classes = {};
     let message = "";
     let modalMessage = "";
     let length = 100;
-    let modalLength = 100;
     let laps = 1.0;
     let modalLaps = 1;
     let modalFractionLaps = 0;
@@ -22,15 +22,19 @@
     let femaleGradingKeys = {};
     let students = {};
     let participatingStudents = {};
+    let searchQuery = '';
+    let selectedIndex = -1;
 
     function toggleLengthModal() {
         showLengthModal = !showLengthModal;
         modalMessage = "";
     }
 
-    function toggleRunType() {
-        fetchGradingKeys();
-        runType = runType === 0 ? 1 : 0;
+    function toggleRunType(type) {
+        if (runType !== type) {
+            fetchGradingKeys();
+            runType = runType === 0 ? 1 : 0;
+        }
     }
 
     function toggleLapsModal() {
@@ -134,16 +138,8 @@
         }
     }
 
-    function setLength() {
-        if (modalLength < 1) {
-            modalMessage = "Die Länge muss größer als 0 sein.";
-        } else if (modalLength > 100000) {
-            modalMessage = "Die Länge darf nicht größer als 100.000 sein.";
-        } else {
-            toggleLengthModal();
-            fetchGradingKeys();
-            length = modalLength;
-        }
+    function setLength(modalLength) {
+        length = modalLength;
     }
 
     function setLaps() {
@@ -166,13 +162,12 @@
         participatingStudents = {};
     }
 
-    let searchQuery = '';
-
     function addStudent(id) {
         if (!participatingStudents[id]) {
             participatingStudents = {...participatingStudents, [id]: students[id]};
         }
         searchQuery = ''; // Reset the search query
+        selectedIndex = -1; // Reset the selected index
     }
 
     function removeStudent(id) {
@@ -182,6 +177,22 @@
 
     const filteredStudents = () => Object.entries(students).filter(([id, name]) => name.toLowerCase().includes(searchQuery.toLowerCase()) && !participatingStudents[id]);
 
+    function handleKeyDown(event) {
+        const list = filteredStudents();
+        if (list.length > 0) {
+            if (event.key === 'ArrowDown') {
+                selectedIndex = (selectedIndex + 1) % list.length;
+                event.preventDefault();
+            } else if (event.key === 'ArrowUp') {
+                selectedIndex = (selectedIndex - 1 + list.length) % list.length;
+                event.preventDefault();
+            } else if (event.key === 'Enter' && selectedIndex >= 0) {
+                addStudent(list[selectedIndex][0]);
+                event.preventDefault();
+            }
+        }
+    }
+
     onMount(async () => {
         await fetchClasses();
         await fetchGradingKeys();
@@ -190,25 +201,7 @@
 </script>
 
 {#if showLengthModal}
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-5 text-xl z-40">
-        <div class="bg-bg-light p-4 rounded-lg w-full text-white">
-            <p class="text-2xl mb-4 text-center font-bold">Gesamtlänge</p>
-            <div class="w-full flex justify-center">
-                <input class=" w-full rounded bg-bg-lightest text-center" type="number" bind:value={modalLength}
-                       placeholder="Lauflänge">
-                <span class="text-tx-gray pl-2">m</span>
-            </div>
-            <p class="text-warn-red text-base pt-4 text-center">{modalMessage}</p>
-            <div class="flex justify-between gap-4 mt-4 text-base">
-                <button class="bg-gray-300 text-black font-bold py-2 px-4 rounded" on:click={toggleLengthModal}>
-                    Abbrechen
-                </button>
-                <button class="bg-cf-green text-black font-bold py-2 px-4 rounded" on:click={setLength}>
-                    Speichern
-                </button>
-            </div>
-        </div>
-    </div>
+    <LengthModal length={length} set={setLength} onClose={toggleLengthModal} />
 {/if}
 {#if showLapsModal}
     <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-5 text-xl z-40">
@@ -233,15 +226,15 @@
         </div>
     </div>
 {/if}
-<div class="p-5 text-white">
+<div class="p-5 pb-0 text-white">
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Lauftyp</p>
-        <div class="flex gap-2 h-[2.5rem]">
-            <button type="button" on:click={toggleRunType} id="lap_run"
+        <div class="flex gap-2 h-[2.5rem] text-lg">
+            <button type="button" on:click={() => toggleRunType(1)} id="lap_run"
                     class="female flex-1 bg-bg-light rounded-lg focus:outline-none {runType === 1 ? 'bg-select-gray' : ''}">
                 Rundenlauf
             </button>
-            <button type="button" on:click={toggleRunType} id="sprint"
+            <button type="button" on:click={() => toggleRunType(0)} id="sprint"
                     class="flex-1 bg-bg-light rounded-lg focus:outline-none {runType === 0 ? 'bg-select-gray' : ''}">
                 Sprint
             </button>
@@ -294,24 +287,25 @@
         <p class="block text-xl mb-1 text-tx-gray">Runden</p>
         <button id="laps" class="input-tx font-bold" on:click={toggleLapsModal}><span
                 class="font-bold text-xl">{runType === 1 ? laps : '--'}</span> <span
-                class="text-tx-gray">Runde(n)</span>
+                class="text-tx-gray text-lg">Runde(n)</span>
         </button>
     </div>
     <p class="text-warn-red {message !== '' ? 'pb-1' : '' }">{message}</p>
-    <div class="container mb-4 text-white rounded-md">
+    <div class="text-white rounded-md w-full">
         <p class="block text-xl mb-1 text-tx-gray">Teilnehmer</p>
-        <div class="relative mb-4">
+        <div class="relative mb-2 w-full">
             <input
                     type="text"
                     placeholder="Bitte geben Sie die Teilnehmer an..."
                     bind:value={searchQuery}
                     class="w-full input-tx text-white"
+                    on:keydown={handleKeyDown}
             />
             {#if searchQuery}
-                <div class="absolute bg-bg-lightest rounded-md mt-1 w-full">
-                    {#each filteredStudents() as [id, name]}
+                <div class="absolute rounded-md bg-bg-light z-50 mt-1 w-full">
+                    {#each filteredStudents() as [id, name], index}
                         <button
-                                class="p-2 hover:bg-gray-700 cursor-pointer w-full text-left"
+                                class="p-2 hover:bg-gray-700 rounded-md cursor-pointer w-full text-left {selectedIndex === index ? 'bg-bg-lightest' : ''}"
                                 on:click={() => addStudent(id)}
                         >
                             {name}
@@ -321,7 +315,7 @@
             {/if}
         </div>
         {#each Object.entries(participatingStudents) as [id, name]}
-            <div class="flex items-center justify-between p-2 bg-bg-lightest rounded-md mb-2">
+            <div class="flex justify-between text-lg p-2 pt-2 bg-bg-lightest rounded-md mb-2 w-full">
                 <span>{name}</span>
                 <button
                         class="text-red-500 hover:text-red-700"
@@ -333,8 +327,8 @@
         {/each}
     </div>
 </div>
-<div class="fixed bottom-0 left-0 right-0 p-5">
+<div class="p-5 pt-2 z-100">
     <button on:click={save} class="confirm-btn"><span class="btn-label">Tags hinzufügen</span><span aria-hidden="true"
-                                                                                               class="btn-icon"><ArrowRight/></span>
+                                                                                                    class="btn-icon"><ArrowRight/></span>
     </button>
 </div>

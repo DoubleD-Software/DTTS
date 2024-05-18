@@ -37,7 +37,7 @@
 <div class="p-5 text-white">
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Name</p>
-        <input id="name" type="text" placeholder="9a" class="input-tx">
+        <input id="name" type="text" placeholder="9a" class="input-tx" on:keydown={(e) => e.key === 'Enter' && save()}>
         <p class="text-tx-gray pt-2 text-sm">Klassen können bei erstmaliger Eingabe oder Bearbeitung des Schülers zugewiesen werden.</p>
     </div>
     <p class="text-warn-red pt-1">{message}</p>

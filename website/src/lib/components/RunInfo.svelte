@@ -63,7 +63,7 @@
         </div>
         <div class="flex mt-2">
             <p><span class="text-tx-gray font-normal">Ø-Note:</span> {json.avg_grade.replace('.', ',')}</p>
-            <p class="absolute left-[50%]"><span class="text-tx-gray font-normal">Ø-Zeit:</span> {formatTime(json.avg_time, 1)}</p>
+            <p class="absolute left-[50%]"><span class="text-tx-gray font-normal">Ø-Zeit:</span> {formatTime(json.avg_time, json.type)}</p>
         </div>
         <p class="mt-2"><span class="text-tx-gray font-normal">Lehrer:</span> {json.teacher}</p>
         <p class="mt-2"><span class="text-tx-gray font-normal">Klasse:</span> {json.class}</p>

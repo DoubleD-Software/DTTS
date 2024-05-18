@@ -1,9 +1,9 @@
 <script>
     import {PUBLIC_API_URL} from "$env/static/public";
-    import {onMount} from "svelte";
     import {formatTime} from "$lib/util.js";
     import ArrowRight from "$lib/icons/ArrowRightIcon.svelte";
     import TimeModal from "$lib/components/TimeModal.svelte";
+    import LengthModal from "$lib/components/LengthModal.svelte";
 
     let message = "";
 
@@ -13,6 +13,8 @@
     let entries = grades.map(grade => ({ grade, time: 0 }));
     let showModal = false;
     let currentTimeEntry = null;
+    let length = 100;
+    let showLengthModal = false;
 
     function openModal(entry) {
         currentTimeEntry = entry;
@@ -24,13 +26,23 @@
         entries = entries.map(entry => ({ ...entry }));
     }
 
-    function toggleType() {
-        type = type === 0 ? 1 : 0;
-        entries = grades.map(grade => ({ grade, time: 0 }));
+    function toggleType(newType) {
+        if (type !== newType) {
+            type = newType;
+            entries = grades.map(grade => ({ grade, time: 0 }));
+        }
     }
 
-    function toggleGender() {
-        gender = gender === 0 ? 1 : 0;
+    function toggleGender(newGender) {
+        gender = newGender;
+    }
+
+    function toggleLengthModal() {
+        showLengthModal = !showLengthModal;
+    }
+
+    function setLength(newLength) {
+        length = newLength;
     }
 
     async function save() {
@@ -45,7 +57,7 @@
         const newGradingKey = {
             name: document.getElementById("name").value,
             type: document.querySelector('.bg-select-gray').id === "lap_run" ? 1 : 0,
-            length: parseInt(document.getElementById("length").value),
+            length: length,
             gender: gender,
             grades: gradesObject
         };
@@ -82,45 +94,48 @@
 {#if showModal}
     <TimeModal type={type} entry={currentTimeEntry} onClose={closeModal}/>
 {/if}
+{#if showLengthModal}
+    <LengthModal length={length} set={setLength} onClose={toggleLengthModal} />
+{/if}
 <div class="p-5 text-white mb-[3rem]">
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Name</p>
-        <input id="name" type="text" placeholder="Max Mustermann" class="input-tx">
+        <input id="name" type="text" placeholder="9 Sprint (m)" class="input-tx">
     </div>
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Typ</p>
-        <div class="flex gap-2 h-[2.5rem] text-xl">
+        <div class="flex gap-2 h-[2.5rem] text-lg">
             <button type="button" id="lap_run"
                     class="flex-1 selector bg-bg-light rounded-lg focus:outline-none {type === 1 ? 'bg-select-gray' : ''}"
-                    on:click={() => toggleType()}>
+                    on:click={() => toggleType(1)}>
                 Rundenlauf
             </button>
             <button type="button" id="sprint"
                     class="flex-1 selector bg-bg-light rounded-lg focus:outline-none {type === 0 ? 'bg-select-gray' : ''}"
-                    on:click={() => toggleType()}>
+                    on:click={() => toggleType(0)}>
                 Sprint
             </button>
         </div>
     </div>
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Geschlecht</p>
-        <div class="flex gap-2 h-[2.5rem] text-xl">
+        <div class="flex gap-2 h-[2.5rem] text-lg">
             <button type="button" id="female"
                     class="flex-1 selector bg-bg-light rounded-lg focus:outline-none {gender === 1 ? 'bg-select-gray' : ''}"
-                    on:click={() => toggleGender()}>
+                    on:click={() => toggleGender(1)}>
                 weiblich
             </button>
             <button type="button" id="male"
                     class="flex-1 selector bg-bg-light rounded-lg focus:outline-none {gender === 0 ? 'bg-select-gray' : ''}"
-                    on:click={() => toggleGender()}>
+                    on:click={() => toggleGender(0)}>
                 männlich
             </button>
         </div>
     </div>
-    <p class="block text-xl mb-1 text-tx-gray">Länge</p>
-    <div class="relative flex items-center justify-center w-full">
-        <input id="length" type="number" min="1" placeholder="100" class="w-full h-[2.5rem] text-lg bg-bg-light px-4 rounded-md text-center text-white focus:outline-none" style="padding-right: 2rem;">
-        <span class="absolute text-tx-gray right-3">m</span>
+    <div class="mb-2">
+        <p class="block text-xl mb-1 text-tx-gray">Länge</p>
+        <button id="length" class="input-tx" on:click={toggleLengthModal}>{length} <span class="text-tx-gray">m</span>
+        </button>
     </div>
     <p class="text-warn-red pt-2">{message}</p>
     <p class="block text-xl mb-1 text-tx-gray">Noten</p>

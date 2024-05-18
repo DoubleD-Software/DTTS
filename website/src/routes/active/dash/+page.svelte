@@ -22,7 +22,7 @@
 
     async function cancelRun() {
         toggleModal();
-        socket.send('3');
+        socket.send('0');
     }
 
     async function checkRunStatus() {

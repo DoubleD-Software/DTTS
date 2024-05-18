@@ -29,7 +29,7 @@ wss.on('connection', (ws) => {
                 response = 1;
             }
         } else {
-            if (message.toString() === '3') {
+            if (message.toString() === '0') {
                 console.log('Cancelling run')
                 ws.send('3');
                 response = 0;

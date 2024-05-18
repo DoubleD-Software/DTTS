@@ -48,15 +48,15 @@
 <div class="p-5 text-white">
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Name</p>
-        <input id="name" type="text" placeholder="Hr. Rüdiger" class="input-tx">
+        <input id="name" type="text" placeholder="Hr. Rüdiger" class="input-tx" on:keydown={(e) => e.key === 'Enter' && document.getElementById('username').focus()}>
     </div>
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Benutzername</p>
-        <input id="username" type="text" placeholder="RuedigerB-MPG" class="input-tx">
+        <input id="username" type="text" placeholder="RuedigerB-MPG" class="input-tx" on:keydown={(e) => e.key === 'Enter' && document.getElementById('password').focus()}>
     </div>
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Passwort</p>
-        <input id="password" type="password" placeholder="Neues Passwort anlegen..." class="input-tx">
+        <input id="password" type="password" placeholder="Neues Passwort anlegen..." class="input-tx" on:keydown={(e) => e.key === 'Enter' && save()}>
     </div>
     <p class="text-warn-red pt-1">{message}</p>
 </div>

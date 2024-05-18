@@ -67,7 +67,7 @@
 <div class="p-5 text-white">
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Geschlecht</p>
-        <div class="flex gap-2 h-[2.5rem]">
+        <div class="flex gap-2 h-[2.5rem] text-lg">
             <button type="button" id="female" class="female flex-1 bg-bg-light rounded-lg focus:outline-none">
                 weiblich
             </button>
@@ -86,7 +86,7 @@
     </div>
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Name</p>
-        <input id="name" type="text" placeholder="Max Mustermann" class="input-tx">
+        <input id="name" type="text" placeholder="Max Mustermann" class="input-tx" on:keydown={(e) => e.key === 'Enter' && save()}>
     </div>
     <p class="text-warn-red pt-2">{message}</p>
 </div>

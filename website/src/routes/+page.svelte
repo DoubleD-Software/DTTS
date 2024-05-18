@@ -37,9 +37,9 @@
 </div>
 <div class="m-5">
     <p class="text-tx-gray text-xl mt-2 mb-1">Benutzername</p>
-    <input placeholder="MustermannE-MPG" bind:value={username} class="input-tx">
+    <input placeholder="MustermannE-MPG" bind:value={username} class="input-tx" on:keydown={(e) => e.key === 'Enter' && document.getElementById('password').focus()}>
     <p class="text-tx-gray text-xl mt-2 mb-1">Passwort</p>
-    <input placeholder="Passwort" bind:value={password} type="password" class="input-tx">
+    <input placeholder="Passwort" id="password" bind:value={password} type="password" class="input-tx" on:keydown={(e) => e.key === 'Enter' && login()}>
     <p class="text-warn-red pt-2">{message}</p>
     <div class="absolute inset-x-0 bottom-0 p-5">
         <button on:click={login} class="confirm-btn"><span class="btn-label">Anmelden</span><span aria-hidden="true" class="btn-icon"><ArrowRight /></span></button>

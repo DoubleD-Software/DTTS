@@ -96,7 +96,7 @@
     </div>
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Name</p>
-        <input id="name" type="text" placeholder="Max Mustermann" class="input-tx">
+        <input id="name" type="text" placeholder="Max Mustermann" class="input-tx" on:keydown={(e) => e.key === 'Enter' && save()}>
     </div>
     <p class="text-warn-red pt-2">{message}</p>
 </div>
