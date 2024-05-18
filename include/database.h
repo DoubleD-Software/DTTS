@@ -50,7 +50,7 @@ typedef struct {
     int length = 0;
     String teacher;
     String class_name;
-    float avg_grade = 0;
+    double avg_grade = 0;
     int avg_time = 0;
 } RunInfo;
 
@@ -58,7 +58,7 @@ typedef struct {
     int student_id = 0;
     String name;
     int time = 0;
-    float grade = 0;
+    double grade = 0;
     int gender = 0;
 } RunInfoStudent;
 
@@ -70,7 +70,7 @@ typedef struct {
     String class_name;
     String grading_key_m;
     String grading_key_f;
-    float avg_grade = 0;
+    double avg_grade = 0;
     int avg_time = 0;
     std::vector<RunInfoStudent> students;
 } RunInfoSpecific;
@@ -84,7 +84,7 @@ typedef struct {
 typedef struct {
     String student_name;
     int time = 0;
-    float grade = 0;
+    double grade = 0;
     int length = 0;
     std::vector<RunInfoLap> laps;
 } RunInfoStudentLaps;
@@ -92,7 +92,7 @@ typedef struct {
 typedef struct {
     int type = 0;
     int length = 0;
-    float grade = 0;
+    double grade = 0;
     int time = 0;
     int date = 0;
     int run_id = 0;
@@ -102,9 +102,10 @@ typedef struct {
     String student_name;
     int gender = 0;
     String class_name;
-    float sprint_avg_grade = 0;
+    double global_avg_grade = 0;
+    double sprint_avg_grade = 0;
     int sprint_avg_time = 0;
-    float lap_run_avg_grade = 0;
+    double lap_run_avg_grade = 0;
     int lap_run_avg_time = 0;
     std::vector<StudentInfoRun> runs;
 } StudentInfo;
@@ -119,7 +120,7 @@ typedef struct {
 } GradingKeySimple;
 
 typedef struct {
-    float grade = 0;
+    double grade = 0;
     int time = 0;
 } GradingKeyGrade;
 
@@ -145,9 +146,9 @@ typedef struct {
     int class_id = 0;
     String name;
     int size = 0;
-    float sprint_avg_grade = 0;
+    double sprint_avg_grade = 0;
     int sprint_avg_time = 0;
-    float lap_run_avg_grade = 0;
+    double lap_run_avg_grade = 0;
     int lap_run_avg_time = 0;
 } ClassInfoSimple;
 
@@ -156,23 +157,23 @@ typedef struct {
     int type = 0;
     int length = 0;
     int date = 0;
-    float avg_grade = 0;
-    float avg_time = 0;
+    double avg_grade = 0;
+    double avg_time = 0;
 } ClassInfoRun;
 
 typedef struct {
     int student_id = 0;
     String name;
     int gender;
-    float avg_grade = 0;
+    double avg_grade = 0;
 } ClassInfoStudent;
 
 typedef struct {
     String name;
-    float global_avg_grade = 0;
-    float sprint_avg_grade = 0;
+    double global_avg_grade = 0;
+    double sprint_avg_grade = 0;
     int sprint_avg_time = 0;
-    float lap_run_avg_grade = 0;
+    double lap_run_avg_grade = 0;
     int lap_run_avg_time = 0;
     std::vector<ClassInfoRun> runs;
     std::vector<ClassInfoStudent> students;
@@ -218,6 +219,12 @@ typedef struct {
     int user_id = 0;
 } UserAuth;
 
+typedef struct {
+    int student_id = 0;
+    String student_name;
+    int time = 0;
+} FinisherSprint;
+
 class Database {
     public:
         Database(String db_path);
@@ -228,7 +235,7 @@ class Database {
         RunInfoSpecific getRunInfo(int run_id);
         RunInfoStudentLaps getRunInfoStudent(int run_id, int student_id);
         int deleteRun(int run_id);
-        int putRun(int type, int date, int class_id, int grading_key_m_id, int grading_key_f_id, int teacher_id, int length, float laps, std::vector<int> participants);
+        int putRun(int type, int date, int class_id, int grading_key_m_id, int grading_key_f_id, int teacher_id, int length, double laps, std::vector<int> participants);
         StudentInfo getStudentInfo(int student_id);
         int deleteStudent(int student_id);
         int putStudent(String name, int gender, int class_id);
@@ -254,6 +261,7 @@ class Database {
         UserAuth checkPassword(String username, String password);
         RunInfoActive getRunInfoActive(int run_id);
         std::vector<RunParticipant> getRunParticipants(int run_id);
+        int insertSprintResults(int run_id, std::vector<FinisherSprint> finishers);
 
     private:
         void createTables();

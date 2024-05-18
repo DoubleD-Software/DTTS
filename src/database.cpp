@@ -232,8 +232,8 @@ std::vector<RunInfo> Database::getRunsByDate(int date) {
             sqlite3_finalize(result_stmt);
             break;
         }
-        float total_grade = 0;
-        float total_time = 0;
+        double total_grade = 0;
+        double total_time = 0;
         int num_results = 0;
         while (sqlite3_step(result_stmt) == SQLITE_ROW) {
             total_grade += sqlite3_column_double(result_stmt, 6);
@@ -342,8 +342,8 @@ RunInfoSpecific Database::getRunInfo(int run_id) {
             sqlite3_finalize(result_stmt);
             break;
         }
-        float total_grade = 0;
-        float total_time = 0;
+        double total_grade = 0;
+        double total_time = 0;
         int num_results = 0;
         while (sqlite3_step(result_stmt) == SQLITE_ROW) {
             RunInfoStudent student;
@@ -466,6 +466,8 @@ int Database::deleteRun(int run_id) {
         sqlite3_finalize(run_stmt);
         return DB_NOT_FOUND;
     }
+    int run_type = sqlite3_column_int(run_stmt, 1);
+    int class_id = sqlite3_column_int(run_stmt, 3);
     sqlite3_finalize(run_stmt);
 
     sql = "DELETE FROM runs WHERE id = " + String(run_id) + ";";
@@ -475,9 +477,85 @@ int Database::deleteRun(int run_id) {
         return DB_FAILED;
     }
 
+    // Calculate the grade and time of the run and subtract it from the class averages
+    double avg_grade = 0;
+    int avg_time = 0;
+    int num_results = 0;
+    sql = "SELECT time, grade FROM results WHERE run_id = " + String(run_id) + ";";
+    sqlite3_stmt* result_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &result_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(result_stmt);
+        return DB_FAILED;
+    }
+    while (sqlite3_step(result_stmt) == SQLITE_ROW) {
+        avg_grade += sqlite3_column_double(result_stmt, 1);
+        avg_time += sqlite3_column_int(result_stmt, 0);
+        num_results++;
+    }
+    sqlite3_finalize(result_stmt);
+
+    avg_grade /= num_results;
+    avg_time /= num_results;
+
+    num_results = 0;
+    sql = "SELECT id from runs WHERE class_id = " + String(class_id) + " AND type = " + String(run_type) + ";";
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &result_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(result_stmt);
+        return DB_FAILED;
+    }
+    while (sqlite3_step(result_stmt) == SQLITE_ROW) {
+        num_results++;
+    }
+    sqlite3_finalize(result_stmt);
+
+    sql = "SELECT sprint_avg_grade, sprint_avg_time, lap_run_avg_grade, lap_run_avg_time FROM classes WHERE id = " + String(class_id) + ";";
+    sqlite3_stmt* class_stmt;
+
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &class_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(class_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(class_stmt) == SQLITE_ROW) {
+        double sprint_avg_grade = sqlite3_column_double(class_stmt, 0);
+        int sprint_avg_time = sqlite3_column_int(class_stmt, 1);
+        double lap_run_avg_grade = sqlite3_column_double(class_stmt, 2);
+        int lap_run_avg_time = sqlite3_column_int(class_stmt, 3);
+
+        if (num_results != 0) {
+            if (run_type == RUN_TYPE_SPRINT) {
+                sprint_avg_grade = (sprint_avg_grade * (num_results + 1) - avg_grade) / num_results;
+                sprint_avg_time = (sprint_avg_time * (num_results + 1) - avg_time) / num_results;
+            } else {
+                lap_run_avg_grade = (lap_run_avg_grade * num_results - avg_grade) / num_results;
+                lap_run_avg_time = (lap_run_avg_time * num_results - avg_time) / num_results;
+            }
+        } else {
+            if (run_type == RUN_TYPE_SPRINT) {
+                sprint_avg_grade = 0;
+                sprint_avg_time = 0;
+            } else {
+                lap_run_avg_grade = 0;
+                lap_run_avg_time = 0;
+            }
+        }
+
+        sql = "UPDATE classes SET sprint_avg_grade = " + String(sprint_avg_grade) + ", sprint_avg_time = " + String(sprint_avg_time) + ", lap_run_avg_grade = " + String(lap_run_avg_grade) + ", lap_run_avg_time = " + String(lap_run_avg_time) + " WHERE id = " + String(class_id) + ";";
+        if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+            DEBUG_SER_PRINT("Failed to update class averages: ");
+            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+            return DB_FAILED;
+        }
+    }
+    sqlite3_finalize(class_stmt);
+
     // Due to a bug in the sqlite3 library, we can't rely on the ON DELETE CASCADE foreign key constraint
     sql = "SELECT id FROM results WHERE run_id = " + String(run_id) + ";";
-    sqlite3_stmt* result_stmt;
     if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &result_stmt, 0) != SQLITE_OK) {
         DEBUG_SER_PRINT("Failed to prepare statement: ");
         DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
@@ -526,7 +604,7 @@ int Database::deleteRun(int run_id) {
  * @param participants A vector of student IDs participating in the run
  * @return The ID of the new run, or a status code defined in database.h
 */
-int Database::putRun(int type, int date, int class_id, int grading_key_m_id, int grading_key_f_id, int teacher_id, int length, float laps, std::vector<int> participants) {
+int Database::putRun(int type, int date, int class_id, int grading_key_m_id, int grading_key_f_id, int teacher_id, int length, double laps, std::vector<int> participants) {
     String sql = "INSERT INTO runs (type, date, class_id, grading_key_m_id, grading_key_f_id, teacher_id, length, laps) VALUES (" + String(type) + ", " + String(date) + ", " + String(class_id) + ", " + String(grading_key_m_id) + ", " + String(grading_key_f_id) + ", " + String(teacher_id) + ", " + String(length) + ", " + String(laps, 2) + ");";
     if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
         DEBUG_SER_PRINT("Failed to insert run: ");
@@ -593,10 +671,10 @@ StudentInfo Database::getStudentInfo(int student_id) {
             sqlite3_finalize(result_stmt);
             break;
         }
-        float sprint_total_grade = 0;
-        float sprint_total_time = 0;
-        float lap_run_total_grade = 0;
-        float lap_run_total_time = 0;
+        double sprint_total_grade = 0;
+        double sprint_total_time = 0;
+        double lap_run_total_grade = 0;
+        double lap_run_total_time = 0;
         int sprint_num_results = 0;
         int lap_run_num_results = 0;
         while (sqlite3_step(result_stmt) == SQLITE_ROW) {
@@ -624,6 +702,7 @@ StudentInfo Database::getStudentInfo(int student_id) {
             student.lap_run_avg_grade = lap_run_total_grade / lap_run_num_results;
             student.lap_run_avg_time = lap_run_total_time / lap_run_num_results;
         }
+        student.global_avg_grade = (student.sprint_avg_grade + student.lap_run_avg_grade) / 2;
         sqlite3_finalize(result_stmt);
 
         String run_sql = "SELECT * FROM runs WHERE class_id = " + String(sqlite3_column_int(student_stmt, 3)) + ";";
@@ -1097,8 +1176,8 @@ int Database::patchGradingKey(int id, String name, int length, std::vector<Gradi
         return DB_FAILED;
     }
     while (sqlite3_step(grading_key_stmt) == SQLITE_ROW) {
-        float grade = sqlite3_column_double(grading_key_stmt, 2);
-        float time = sqlite3_column_int(grading_key_stmt, 1);
+        double grade = sqlite3_column_double(grading_key_stmt, 2);
+        double time = sqlite3_column_int(grading_key_stmt, 1);
         int id = sqlite3_column_int(grading_key_stmt, 0);
 
         for (int i = 0; i < grades.size(); i++) {
@@ -1185,6 +1264,7 @@ ClassInfo Database::getClassInfo(int class_id) {
         class_info.sprint_avg_time = sqlite3_column_int(class_stmt, 3);
         class_info.lap_run_avg_grade = sqlite3_column_double(class_stmt, 4);
         class_info.lap_run_avg_time = sqlite3_column_int(class_stmt, 5);
+        class_info.global_avg_grade = (class_info.sprint_avg_grade + class_info.lap_run_avg_grade) / 2;
     } else {
         sqlite3_finalize(class_stmt);
         return class_info;
@@ -1213,7 +1293,7 @@ ClassInfo Database::getClassInfo(int class_id) {
             sqlite3_finalize(result_stmt);
             break;
         }
-        float avg_grade = 0;
+        double avg_grade = 0;
         int num_results = 0;
         while (sqlite3_step(result_stmt) == SQLITE_ROW) {
             avg_grade += sqlite3_column_double(result_stmt, 6);
@@ -1252,8 +1332,8 @@ ClassInfo Database::getClassInfo(int class_id) {
             sqlite3_finalize(result_stmt);
             break;
         }
-        float total_grade = 0;
-        float total_time = 0;
+        double total_grade = 0;
+        double total_time = 0;
         int num_results = 0;
         while (sqlite3_step(result_stmt) == SQLITE_ROW) {
             total_grade += sqlite3_column_double(result_stmt, 6);
@@ -1830,4 +1910,156 @@ std::vector<RunParticipant> Database::getRunParticipants(int run_id) {
     }
     sqlite3_finalize(participant_stmt);
     return participants;
+}
+
+/**
+ * Inserts the results of a sprint into the database and updates the grades
+ * @param run_id The ID of the run
+ * @param finishers A vector of FinisherSprints objects
+ * @return A status code defined in database.h
+*/
+int Database::insertSprintResults(int run_id, std::vector<FinisherSprint> finishers) {
+    String run_sql = "SELECT * FROM runs WHERE id = " + String(run_id) + ";";
+    sqlite3_stmt* run_stmt;
+    if (sqlite3_prepare_v2(this->db, run_sql.c_str(), -1, &run_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(run_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(run_stmt) != SQLITE_ROW) {
+        sqlite3_finalize(run_stmt);
+        return DB_NOT_FOUND;
+    }
+    int grading_key_m_id = sqlite3_column_int(run_stmt, 4);
+    int grading_key_f_id = sqlite3_column_int(run_stmt, 5);
+    int class_id = sqlite3_column_int(run_stmt, 3);
+    int date = sqlite3_column_int(run_stmt, 2);
+    sqlite3_finalize(run_stmt);
+
+    std::vector<GradingKeyGrade> grading_key_m;
+    std::vector<GradingKeyGrade> grading_key_f;
+
+    String grading_keys_grades_sql = "SELECT * FROM grading_keys_grades WHERE grading_key_id = " + String(grading_key_m_id);
+    sqlite3_stmt* grading_keys_grades_stmt;
+    if (sqlite3_prepare_v2(this->db, grading_keys_grades_sql.c_str(), -1, &grading_keys_grades_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(grading_keys_grades_stmt);
+        return DB_FAILED;
+    }
+    while (sqlite3_step(grading_keys_grades_stmt) == SQLITE_ROW) {
+        GradingKeyGrade grade;
+        grade.grade = sqlite3_column_double(grading_keys_grades_stmt, 2);
+        grade.time = sqlite3_column_int(grading_keys_grades_stmt, 1);
+        grading_key_m.push_back(grade);
+    }
+    sqlite3_finalize(grading_keys_grades_stmt);
+
+    grading_keys_grades_sql = "SELECT * FROM grading_keys_grades WHERE grading_key_id = " + String(grading_key_f_id);
+    if (sqlite3_prepare_v2(this->db, grading_keys_grades_sql.c_str(), -1, &grading_keys_grades_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(grading_keys_grades_stmt);
+        return DB_FAILED;
+    }
+    while (sqlite3_step(grading_keys_grades_stmt) == SQLITE_ROW) {
+        GradingKeyGrade grade;
+        grade.grade = sqlite3_column_double(grading_keys_grades_stmt, 2);
+        grade.time = sqlite3_column_int(grading_keys_grades_stmt, 1);
+        grading_key_f.push_back(grade);
+    }
+    sqlite3_finalize(grading_keys_grades_stmt);
+
+    double avg_grade = 0;
+    double avg_time = 0;
+
+    for (int i = 0; i < finishers.size(); i++) {
+        String student_sql = "SELECT gender FROM students WHERE id = " + String(finishers[i].student_id) + ";";
+        sqlite3_stmt *student_stmt;
+        if (sqlite3_prepare_v2(this->db, student_sql.c_str(), -1, &student_stmt, 0) != SQLITE_OK) {
+            DEBUG_SER_PRINT("Failed to prepare statement: ");
+            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+            sqlite3_finalize(student_stmt);
+            return DB_FAILED;
+        }
+        if (sqlite3_step(student_stmt) != SQLITE_ROW) {
+            sqlite3_finalize(student_stmt);
+            return DB_NOT_FOUND;
+        }
+        int gender = sqlite3_column_int(student_stmt, 0);
+        sqlite3_finalize(student_stmt);
+
+        double grade = 0;
+
+        if (gender == GENDER_TYPE_MALE) {
+            int time_diff = INT32_MAX;
+            for (int j = 0; j < grading_key_m.size(); j++) {
+                if (((grading_key_m[j].time - finishers[i].time) >= 0) && ((grading_key_m[j].time - finishers[i].time) < time_diff)) {
+                    time_diff = grading_key_m[j].time - finishers[i].time;
+                    grade = grading_key_m[j].grade;
+                }
+            }
+        } else {
+            int time_diff = INT32_MAX;
+            for (int j = 0; j < grading_key_f.size(); j++) {
+                if (((grading_key_f[j].time - finishers[i].time) >= 0) && ((grading_key_f[j].time - finishers[i].time) < time_diff)) {
+                    time_diff = grading_key_f[j].time - finishers[i].time;
+                    grade = grading_key_f[j].grade;
+                }
+            }
+        }
+
+        String result_sql = "INSERT INTO results (type, run_id, student_id, time, grade, date) VALUES (0, " + String(run_id) + ", " + String(finishers[i].student_id) + ", " + String(finishers[i].time) + ", " + String(grade) + ", " + String(date) + ");";
+        if (sqlite3_exec(this->db, result_sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+            DEBUG_SER_PRINT("Failed to insert result: ");
+            DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+            return DB_FAILED;
+        }
+
+        avg_grade += grade;
+        avg_time += finishers[i].time;
+    }
+    avg_grade /= finishers.size();
+    avg_time /= finishers.size();
+
+    run_sql = "SELECT * FROM runs WHERE type = 0 AND class_id = " + String(class_id);
+    if (sqlite3_prepare_v2(this->db, run_sql.c_str(), -1, &run_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(run_stmt);
+        return DB_FAILED;
+    }
+    int num_sprints = 0;
+    while (sqlite3_step(run_stmt) == SQLITE_ROW) {
+        num_sprints++;
+    }
+
+    String class_sql = "SELECT * FROM classes WHERE id = " + String(class_id);
+    sqlite3_stmt* class_stmt;
+    if (sqlite3_prepare_v2(this->db, class_sql.c_str(), -1, &class_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(class_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(class_stmt) != SQLITE_ROW) {
+        sqlite3_finalize(class_stmt);
+        return DB_NOT_FOUND;
+    }
+    double sprint_avg_grade = sqlite3_column_double(class_stmt, 2);
+    int sprint_avg_time = sqlite3_column_int(class_stmt, 3);
+    sqlite3_finalize(class_stmt);
+
+    sprint_avg_grade = (sprint_avg_grade * (num_sprints - 1) + avg_grade) / num_sprints;
+    sprint_avg_time = (sprint_avg_time * (num_sprints - 1) + avg_time) / num_sprints;
+
+    class_sql = "UPDATE classes SET sprint_avg_grade = " + String(sprint_avg_grade) + ", sprint_avg_time = " + String(sprint_avg_time) + " WHERE id = " + String(class_id);
+    if (sqlite3_exec(this->db, class_sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to update class: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+
+    return DB_SUCCESS;
 }

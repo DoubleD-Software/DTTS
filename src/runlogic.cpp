@@ -29,14 +29,18 @@ void RunHandler::init() {
             DEBUG_SER_PRINTLN(client->remoteIP().toString());
             this->client = client;
             if (getActiveRunId() == RUN_ACTIVE_TAG) {
-                run_tag_assign_fn = true;
+                tag_assign_active = true;                       // When a client connects the tag assignment is started
+            } else if (getActiveRunId() != RUN_NOT_ACTIVE) {
+                if (run_in_progress) {
+                    String client_str = "1 " + String(run_time_elapsed);
+                    ws->textAll(client_str);
+                }
             } else {
                 client->close(); // No reason for ws connection = disconnect
             }
         } else if(type == WS_EVT_DISCONNECT) {
             DEBUG_SER_PRINT("Websocket client disconnected: ");
             DEBUG_SER_PRINTLN(client->id());
-            run_tag_assign_fn = false;
         } else if(type == WS_EVT_ERROR) {
             DEBUG_SER_PRINTLN("Websocket error.");
         } else if(type == WS_EVT_DATA) {
@@ -79,16 +83,18 @@ void RunHandler::init() {
  * Sets the active run for the handler which then retrieves the participants for the run.
  * @param run_id The id of the run to set as active.
 */
-void RunHandler::setActiveRun(int run_id) {
+void RunHandler::setActiveRun(int run_id, int type) {
     active_run_id = run_id;
+    active_run_type = type;
     run_active = true;
     run_state = RUN_ACTIVE_TAG;
-    run_tag_assign_fn = false;
+    tag_assign_active = false;
     dtts_armed = false;
 
     participants = db->getRunParticipants(run_id);
     tag_assignments.clear();
-    
+    finishers.clear();
+
     DEBUG_SER_PRINT("Active run set to: ");
     DEBUG_SER_PRINTLN(run_id);
 }
@@ -110,11 +116,21 @@ int RunHandler::getActiveRunId() {
 /**
  * Handles the run logic by checking the state of the run and performing the necessary actions.
  * This function should be called from the main loop through the server object.
+ * When a run is armed, this function blocks until the run is complete and also waits for the start button press.
 */
 void RunHandler::handle() {
     ws->cleanupClients();
     if (run_active) {
-        if (run_tag_assign_fn) {
+        if (dtts_armed) {
+            while (digitalRead(BUTTON_PIN) == HIGH);
+            run_in_progress = true;
+            ws->textAll("1 0");
+            if (active_run_type == RUN_TYPE_SPRINT) {
+                runSprint();
+            } else {
+                // Later
+            }
+        } else if (tag_assign_active) {
             startTagAssignment();
         }
     }
@@ -170,7 +186,7 @@ void RunHandler::startTagAssignment() {
         }
 
         client_str += String(participants[participant_number].student_name);
-        client->text(client_str);
+        ws->textAll(client_str);
         while (true) {
             RfidEpc tag = readRfidTag(true);
             bool tag_collision = false;
@@ -188,8 +204,7 @@ void RunHandler::startTagAssignment() {
         }
 
         while (true) {
-            if (!run_tag_assign_fn) return; // Client disconnected
-            client->text("2");
+            ws->textAll("2");
             while(!ws_data_received) {
                 delay(10);
             }
@@ -210,9 +225,95 @@ void RunHandler::startTagAssignment() {
         }
     }
 
-    DEBUG_SER_PRINTLN("All tags assigned");
-    run_tag_assign_fn = false;
+    DEBUG_SER_PRINTLN("All tags assigned, DTTS is armed");
+
+    // DTTS is armed after all tags are assigned, this means that when the start button is pressed, the run will start
+    tag_assign_active = false;
     dtts_armed = true;
+    run_state = RUN_ACTIVE;
+    num_disp->displayString("------"); // Maybe an animation in the future
+}
+
+/**
+ * Runs the sprint logic for the active sprint run.
+ * This function blocks until the run is complete.
+*/
+void RunHandler::runSprint() {
+    DEBUG_SER_PRINTLN("Sprint run started.");
+    run_start_time = millis();
+    unsigned long last_ws_send = millis();
+
+    while(true) {
+        if (finishers.size() == participants.size()) {
+            break;
+        }
+
+        calcAndDispTime();
+        RfidEpc tag = readRfidTag(false);
+        if (tag.tag_valid) {
+            for (int i = 0; i < tag_assignments.size(); i++) {
+                if (memcmp(tag.epc, tag_assignments[i].epc, 12) == 0) {
+                    FinisherSprint finisher;
+                    finisher.student_id = participants[i].student_id;
+                    finisher.time = run_time_elapsed;
+                    finisher.student_name = participants[i].student_name;
+                    finishers.push_back(finisher);
+
+                    oled->clear();
+                    oled->print(String(participants[i].student_name + "\n").c_str(), 1);
+                    oled->print(String(String((finisher.time / 1000) / 60) + ":" + String((finisher.time / 1000) % 60) + ":" + String(finisher.time % 1000)).c_str(), 2);
+                    break;
+                }
+            }
+        }
+        if (millis() - last_ws_send > 1000) {
+            String client_str = "1 " + String(run_time_elapsed);
+            ws->textAll(client_str);
+
+            JsonDocument finishers_json;
+            for (int i = 0; i < finishers.size(); i++) {
+                finishers_json["finishers"][String(i)]["name"] = finishers[i].student_name;
+                finishers_json["finishers"][String(i)]["time"] = finishers[i].time;
+            }
+            String finishers_str;
+            serializeJson(finishers_json, finishers_str);
+            if (finishers_str == "null") {
+                finishers_str = "{}";
+            }
+            finishers_str = "2 " + finishers_str;
+            ws->textAll(finishers_str);
+            
+            last_ws_send = millis();
+        }
+    }
+    String client_str = "4 " + String(active_run_id);
+    ws->textAll(client_str);
+    ws->closeAll();
+    oled->clear();
+    oled->print("Run done!", 2);
+    db->insertSprintResults(active_run_id, finishers);
+    run_active = false;
+}
+
+/**
+ * Calculates the time elapsed since the run started and displays it on the 6-digit display.
+*/
+void RunHandler::calcAndDispTime() {
+    unsigned long current_time = millis();
+    run_time_elapsed = current_time - run_start_time;
+    int time_seconds = run_time_elapsed / 1000;
+    int time_minutes = time_seconds / 60;
+    time_seconds = time_seconds % 60;
+    int time_millis = (run_time_elapsed % 1000) / 10;
+
+    time_num_buffer[0] = time_minutes / 10;
+    time_num_buffer[1] = (time_minutes % 10) | DISPLAY_DOT;
+    time_num_buffer[2] = time_seconds / 10;
+    time_num_buffer[3] = (time_seconds % 10) | DISPLAY_DOT;
+    time_num_buffer[4] = time_millis / 10;
+    time_num_buffer[5] = time_millis % 10;
+
+    num_disp->displayNumBuffer(time_num_buffer);
 }
 
 /**
@@ -242,6 +343,8 @@ RfidEpc RunHandler::readRfidTag(bool block) {
     epc.tag_valid = false;
 
     uint8_t serial_buffer[64] = {0};
+
+    clearRfidBuf(false, false);
 
     while (true) {
         while (Serial2.available() < 8);

@@ -138,12 +138,12 @@ void DTTSRestApi::putRun(AsyncWebServerRequest *request, String data) {
             int grading_key_m_id = doc["grading_key_male_id"];
             int grading_key_f_id = doc["grading_key_female_id"];
             String laps_s = doc["laps"];
-            float laps = laps_s.toFloat();
+            double laps = laps_s.toDouble();
 
             int run_id = db->putRun(type, date, class_id, grading_key_m_id, grading_key_f_id, teacher_id, length, laps, participants);
 
             if (run_id != DB_FAILED) {
-                run_handler->setActiveRun(run_id);
+                run_handler->setActiveRun(run_id, type);
             } else {
                 request_result = 500;
             }
@@ -174,7 +174,7 @@ void DTTSRestApi::getStudent(AsyncWebServerRequest *request) {
             doc["name"] = student_info.student_name;
             doc["gender"] = student_info.gender;
             doc["class"] = student_info.class_name;
-            doc["global_avg_grade"] = String((student_info.sprint_avg_grade + student_info.lap_run_avg_grade) / 2, 2);
+            doc["global_avg_grade"] = String(student_info.global_avg_grade, 2);
             doc["sprint"]["avg_grade"] = String(student_info.sprint_avg_grade, 2);
             doc["sprint"]["avg_time"] = student_info.sprint_avg_time;
             doc["lap_run"]["avg_grade"] = String(student_info.lap_run_avg_grade, 2);
@@ -401,7 +401,7 @@ void DTTSRestApi::putGradingKey(AsyncWebServerRequest *request, String data) {
             for (JsonPair grade : grades_obj) {
                 GradingKeyGrade grading_key_grade;
                 String grade_key = grade.key().c_str();
-                grading_key_grade.grade = grade_key.toFloat();
+                grading_key_grade.grade = grade_key.toDouble();
                 grading_key_grade.time = grade.value().as<int>();
                 grades.push_back(grading_key_grade);
             }
@@ -462,7 +462,7 @@ void DTTSRestApi::patchGradingKey(AsyncWebServerRequest *request, String data) {
                 for (JsonPair grade : grades_obj) {
                     GradingKeyGrade grading_key_grade;
                     String grade_key = grade.key().c_str();
-                    grading_key_grade.grade = grade_key.toFloat();
+                    grading_key_grade.grade = grade_key.toDouble();
                     grading_key_grade.time = grade.value().as<int>();
                     grades.push_back(grading_key_grade);
                 }
