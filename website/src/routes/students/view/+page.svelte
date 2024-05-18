@@ -104,7 +104,7 @@
         <div class="text-3xl text-white font-semibold mt-4 mb-2 text-center">Läufe</div>
         <div class="border-t border-gray-500 pt-3">
             {#each Object.entries(student.runs) as [index, run]}
-                <a href="/runs/view?id={index}{run.type === 1 ? `&student=${studentId}` : ''}" class="fill-white flex items-center mb-2 last:mb-0 bg-bg-lightest p-2 rounded-lg">
+                <a href="/runs/view?id={index}" class="fill-white flex items-center mb-2 last:mb-0 bg-bg-lightest p-2 rounded-lg">
                     {#if run.type === 1}
                         <LapRunIcon />
                     {:else}

@@ -130,7 +130,7 @@
         <div class="border-t border-gray-500 pt-3">
             {#if runs}
                 {#each Object.entries(classEntry.runs) as [index, run]}
-                    <a href="/runs/view?id={index}{run.type === 1 ? `&student=${classId}` : ''}"
+                    <a href="/runs/view?id={index}"
                        class="fill-white flex items-center mb-2 last:mb-0 bg-bg-lightest p-2 rounded-lg">
                         {#if run.type === 1}
                             <LapRunIcon />

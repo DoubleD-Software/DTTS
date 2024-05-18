@@ -5,6 +5,7 @@
     import ArrowRight from "$lib/icons/ArrowRightIcon.svelte";
     import TimeModal from "$lib/components/TimeModal.svelte";
     import LockedIcon from "$lib/icons/LockedIcon.svelte";
+    import LengthModal from "$lib/components/LengthModal.svelte";
 
     let message = "";
 
@@ -15,6 +16,8 @@
     let showModal = false;
     let currentTimeEntry = null;
     let gradingKey;
+    let showLengthModal = false;
+    let length = 100;
 
     function openModal(entry) {
         currentTimeEntry = entry;
@@ -26,6 +29,14 @@
         entries = entries.map(entry => ({ ...entry }));
     }
 
+    function toggleLengthModal() {
+        showLengthModal = !showLengthModal;
+    }
+
+    function setLength(newLength) {
+        length = newLength;
+    }
+
     async function getGradingKey() {
         const response = await fetch(PUBLIC_API_URL + '/gradingkeys?id=' + id, {
             method: 'GET',
@@ -35,7 +46,7 @@
         if (response.ok) {
             gradingKey = await response.json();
             document.getElementById("name").value = gradingKey.name;
-            document.getElementById("length").value = gradingKey.length;
+            length = gradingKey.length;
             type = gradingKey.type;
             entries = grades.map(grade => ({
                 grade,
@@ -50,7 +61,6 @@
         }
     }
 
-
     async function save() {
         if (!entries.every(entry => entry.time > 0)) {
             message = "Bitte geben Sie gültige Zeiten für alle Noten an.";
@@ -62,7 +72,7 @@
         }, {});
         const newGradingKey = {
             name: document.getElementById("name").value,
-            length: parseInt(document.getElementById("length").value),
+            length: length,
             grades: gradesObject
         };
 
@@ -104,15 +114,18 @@
 {#if showModal}
     <TimeModal type={type} entry={currentTimeEntry} onClose={closeModal}/>
 {/if}
+{#if showLengthModal}
+    <LengthModal length={length} set={setLength} onClose={toggleLengthModal} />
+{/if}
 <div class="p-5 text-white mb-[3rem]">
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Name</p>
         <input id="name" type="text" placeholder="9 Sprint (m)" class="input-tx">
     </div>
-    <p class="block text-xl mb-1 text-tx-gray">Länge</p>
-    <div class="relative flex items-center justify-center w-full">
-        <input id="length" type="number" min="1" placeholder="100" class="w-full h-[2.5rem] text-lg bg-bg-light px-4 rounded-md text-center text-white focus:outline-none" style="padding-right: 2rem;">
-        <span class="absolute text-tx-gray right-3">m</span>
+    <div class="mb-2">
+        <p class="block text-xl mb-1 text-tx-gray">Länge</p>
+        <button id="length" class="input-tx" on:click={toggleLengthModal}>{length} <span class="text-tx-gray">m</span>
+        </button>
     </div>
     <p class="text-warn-red pt-2">{message}</p>
     <p class="block text-xl mb-1 mt-2 text-tx-gray">Noten</p>
