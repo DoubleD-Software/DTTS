@@ -1,0 +1,17 @@
+{
+  "theme_color": "#252525",
+  "background_color": "#252525",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "description": "Digital Time Tracking System",
+  "name": "DTTS",
+  "short_name": "DTTS",
+  "icons": [
+    {
+      "src": "/app_icon.webp",
+      "sizes": "512x512",
+      "type": "image/webp"
+    }
+  ]
+}

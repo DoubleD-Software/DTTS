@@ -55,7 +55,7 @@
         <a href="/students/new" on:click={toggleMenu}>Neuer Schüler</a>
         <a href="/gradingkeys" on:click={toggleMenu}>Notenschlüssel</a>
         <a href="/teachers" on:click={toggleMenu}>Lehrer</a>
-        <a href="/active/dash" on:click={toggleMenu}>Aktiver Lauf</a>
+        <a href="/active/tag" on:click={toggleMenu}>Aktiver Lauf</a>
     </div>
 {/if}
 
