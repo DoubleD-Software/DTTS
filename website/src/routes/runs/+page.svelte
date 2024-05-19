@@ -12,7 +12,7 @@
         fetchRuns();
     }
 
-    let runs = [];
+    let runs = {};
 
     async function fetchRuns() {
         try {
@@ -24,6 +24,8 @@
             if (response.ok) {
                 const data = await response.json();
                 runs = Object.entries(data);
+            } else if (response.status === 404) {
+                runs = {};
             } else if (response.status === 401) {
                 window.location.href = '/';
             } else {
