@@ -76,7 +76,6 @@ typedef struct {
 } RunInfoSpecific;
 
 typedef struct {
-    int lap_number = 0;
     int length = 0;
     int time = 0;
 } RunInfoLap;
@@ -225,6 +224,23 @@ typedef struct {
     int time = 0;
 } FinisherSprint;
 
+typedef struct {
+    int time = 0;
+    int length = 0;
+} FinisherLap;
+
+typedef struct {
+    int student_id = 0;
+    String student_name;
+    int total_time = 0;
+    std::vector<FinisherLap> laps;
+} FinisherLapRun;
+
+typedef struct {
+    int length = 0;
+    double laps = 0;
+} PreLapRunInfo;
+
 class Database {
     public:
         Database(String db_path);
@@ -262,6 +278,8 @@ class Database {
         RunInfoActive getRunInfoActive(int run_id);
         std::vector<RunParticipant> getRunParticipants(int run_id);
         int insertSprintResults(int run_id, std::vector<FinisherSprint> finishers);
+        PreLapRunInfo getPreLapRunInfo(int run_id);
+        int insertLapRunResults(int run_id, std::vector<FinisherLapRun> finishers);
 
     private:
         void createTables();

@@ -99,7 +99,11 @@ void RunHandler::setActiveRun(int run_id, int type) {
 
     participants = db->getRunParticipants(run_id);
     tag_assignments.clear();
-    finishers.clear();
+    sprint_finishers.clear();
+    lap_run_finishers.clear();
+    lrf_lap_counts.clear();
+    tag_locks.clear();
+    num_lap_run_finishers = 0;
 
     DEBUG_SER_PRINT("Active run set to: ");
     DEBUG_SER_PRINTLN(run_id);
@@ -128,6 +132,44 @@ void RunHandler::handle() {
     ws->cleanupClients();
     if (run_active) {
         if (dtts_armed) {
+            // Do some pre-calculations for a lap run
+            if (active_run_type == RUN_TYPE_LAP_RUN) {
+                pre_lap_run_info = db->getPreLapRunInfo(active_run_id);
+                double int_part;
+                double frac_part = modf(pre_lap_run_info.laps, &int_part);
+                int full_lap_length = pre_lap_run_info.length / pre_lap_run_info.laps;
+                double partial_lap_length = pre_lap_run_info.length - (full_lap_length * int_part);
+
+                lr_total_laps = int_part;
+                if (partial_lap_length > 0) {
+                    lr_total_laps++;
+                }
+
+                for (int i = 0; i < participants.size(); i++) {
+                    FinisherLapRun finisher;
+                    finisher.student_id = participants[i].student_id;
+                    finisher.student_name = participants[i].student_name;
+
+                    if (partial_lap_length > 0) { // The first lap is a partial lap when the teacher entered a real number of laps
+                        FinisherLap lap;
+                        lap.length = partial_lap_length;
+                        finisher.laps.push_back(lap);
+                    }
+                    for (int j = 0; j < int_part; j++) {
+                        FinisherLap lap;
+                        lap.length = full_lap_length;
+                        finisher.laps.push_back(lap);
+                    }
+
+                    lap_run_finishers.push_back(finisher);
+                    int lap_count = 0;
+                    lrf_lap_counts.push_back(lap_count);
+
+                    TagLock lock;
+                    tag_locks.push_back(lock);
+                }
+            }
+
             while (digitalRead(BUTTON_PIN) == HIGH) {
                 if (ws_data_received && last_ws_rx == "0") {
                     ws->textAll("3");
@@ -145,7 +187,7 @@ void RunHandler::handle() {
             if (active_run_type == RUN_TYPE_SPRINT) {
                 runSprint();
             } else {
-                // Later
+                runLapRun();
             }
         } else if (tag_assign_active) {
             startTagAssignment();
@@ -263,11 +305,11 @@ void RunHandler::runSprint() {
     unsigned long last_ws_send = millis();
 
     while(true) {
-        if (finishers.size() == participants.size()) {
+        if (sprint_finishers.size() == participants.size()) {
             break;
         }
 
-        calcAndDispTime();
+        calcAndDispTimeSprint();
         RfidEpc tag = readRfidTag(false);
         if (tag.tag_valid) {
             for (int i = 0; i < tag_assignments.size(); i++) {
@@ -276,7 +318,7 @@ void RunHandler::runSprint() {
                     finisher.student_id = participants[i].student_id;
                     finisher.time = run_time_elapsed;
                     finisher.student_name = participants[i].student_name;
-                    finishers.push_back(finisher);
+                    sprint_finishers.push_back(finisher);
 
                     oled->clear();
                     oled->print(String(participants[i].student_name + "\n").c_str(), 1);
@@ -290,9 +332,10 @@ void RunHandler::runSprint() {
             ws->textAll(client_str);
 
             JsonDocument finishers_json;
-            for (int i = 0; i < finishers.size(); i++) {
-                finishers_json["finishers"][String(i)]["name"] = finishers[i].student_name;
-                finishers_json["finishers"][String(i)]["time"] = finishers[i].time;
+            for (int i = 0; i < sprint_finishers.size(); i++) {
+                String index = String(i);
+                finishers_json["finishers"][index]["name"] = sprint_finishers[i].student_name;
+                finishers_json["finishers"][index]["time"] = sprint_finishers[i].time;
             }
             String finishers_str;
             serializeJson(finishers_json, finishers_str);
@@ -325,7 +368,7 @@ void RunHandler::runSprint() {
     ws->closeAll();
     oled->clear();
     oled->print("Lauf ende!", 2);
-    db->insertSprintResults(active_run_id, finishers);
+    db->insertSprintResults(active_run_id, sprint_finishers);
     run_active = false;
 
     clearRfidBuf(false, false);
@@ -335,9 +378,117 @@ void RunHandler::runSprint() {
 }
 
 /**
- * Calculates the time elapsed since the run started and displays it on the 6-digit display.
+ * Runs the lap run logic for the active lap run.
+ * This function blocks until the run is complete.
 */
-void RunHandler::calcAndDispTime() {
+void RunHandler::runLapRun() {
+    DEBUG_SER_PRINTLN("Lap run started.");
+    run_start_time = millis();
+    unsigned long last_ws_send = millis();
+
+    while(true) {
+        if (num_lap_run_finishers == participants.size()) {
+            break;
+        }
+
+        calcAndDispTimeLapRun();
+        RfidEpc tag = readRfidTag(false);
+        if (tag.tag_valid) {
+            for (int i = 0; i < tag_assignments.size(); i++) {
+                if (memcmp(tag.epc, tag_assignments[i].epc, 12) == 0) {
+                    if (!tag_locks[i].locked) {
+                        tag_locks[i].locked = true;
+                        tag_locks[i].lock_start = millis();
+                    } else {
+                        break;
+                    }
+
+                    int current_lap_time = run_time_elapsed;
+                    for (int j = 0; j < lrf_lap_counts[i]; j++) {
+                        current_lap_time -= lap_run_finishers[i].laps[j].time;
+                    }
+                    lap_run_finishers[i].laps[lrf_lap_counts[i]].time = current_lap_time;
+                    lrf_lap_counts[i]++;
+                    if (lrf_lap_counts[i] == lr_total_laps) {   // Student has finished all laps of the run
+                        int total_time = 0;
+                        for (int j = 0; j < pre_lap_run_info.laps; j++) {
+                            total_time += lap_run_finishers[i].laps[j].time;
+                        }
+                        lap_run_finishers[i].total_time = total_time;
+                        num_lap_run_finishers++;
+
+                        oled->clear();
+                        oled->print(String(participants[i].student_name + "\n").c_str(), 1);
+                        oled->print(String(String((total_time / 1000) / 60) + ":" + String((total_time / 1000) % 60) + ":" + String(total_time % 1000)).c_str(), 2);
+                    } else {
+                        oled->clear();
+                        oled->print(String(participants[i].student_name + "\n").c_str(), 1);
+                        oled->print(String("Runde: " + String(lrf_lap_counts[i]) + "\n").c_str(), 1);
+                        oled->print(String(String((current_lap_time / 1000) / 60) + ":" + String((current_lap_time / 1000) % 60) + ":" + String(current_lap_time % 1000)).c_str(), 2);
+                    }
+                    break;
+                }
+            }
+        }
+        if (millis() - last_ws_send > 1000) {
+            String client_str = "1 " + String(run_time_elapsed);
+            ws->textAll(client_str);
+
+            JsonDocument finishers_json;
+            for (int i = 0; i < sprint_finishers.size(); i++) {
+                String index = String(i);
+                finishers_json["finishers"][index]["name"] = sprint_finishers[i].student_name;
+                finishers_json["finishers"][index]["time"] = sprint_finishers[i].time;
+            }
+            String finishers_str;
+            serializeJson(finishers_json, finishers_str);
+            if (finishers_str == "null") {
+                finishers_str = "{}";
+            }
+            finishers_str = "2 " + finishers_str;
+            ws->textAll(finishers_str);
+            
+            last_ws_send = millis();
+        }
+        if (ws_data_received && last_ws_rx == "0") {
+            ws->textAll("3");
+            ws_data_received = false;
+            ws->closeAll();
+            oled->clear();
+            oled->print("Lauf abge-brochen!", 2);
+            run_active = false;
+            db->deleteRun(active_run_id);
+
+            clearRfidBuf(false, false);
+            Serial2.write(stop_multi, sizeof(stop_multi));
+            DEBUG_SER_PRINT("Stopping RFID multi read:");
+            clearRfidBuf();
+            return;
+        }
+        for (int i = 0; i < tag_locks.size(); i++) {
+            if (tag_locks[i].locked && (millis() - tag_locks[i].lock_start >= LAP_RUN_LOCK_TIME)) {
+                tag_locks[i].locked = false;
+            }
+        }
+    }
+    String client_str = "4 " + String(active_run_id);
+    ws->textAll(client_str);
+    ws->closeAll();
+    oled->clear();
+    oled->print("Lauf ende!", 2);
+    db->insertLapRunResults(active_run_id, lap_run_finishers);
+    run_active = false;
+
+    clearRfidBuf(false, false);
+    Serial2.write(stop_multi, sizeof(stop_multi));
+    DEBUG_SER_PRINT("Stopping RFID multi read:");
+    clearRfidBuf();
+}
+
+/**
+ * Calculates the time elapsed since the run started and displays it on the 6-digit display MM:SS::MS
+*/
+void RunHandler::calcAndDispTimeSprint() {
     unsigned long current_time = millis();
     run_time_elapsed = current_time - run_start_time;
     int time_seconds = run_time_elapsed / 1000;
@@ -351,6 +502,28 @@ void RunHandler::calcAndDispTime() {
     time_num_buffer[3] = (time_seconds % 10) | DISPLAY_DOT;
     time_num_buffer[4] = time_millis / 10;
     time_num_buffer[5] = time_millis % 10;
+
+    num_disp->displayNumBuffer(time_num_buffer);
+}
+
+/**
+ * Calculates the time elapsed since the run started and displays it on the 6-digit display HH:MM:SS
+*/
+void RunHandler::calcAndDispTimeLapRun() {
+    unsigned long current_time = millis();
+    run_time_elapsed = current_time - run_start_time;
+    int time_seconds = run_time_elapsed / 1000;
+    int time_minutes = time_seconds / 60;
+    time_seconds = time_seconds % 60;
+    int time_hours = time_minutes / 60;
+    time_minutes = time_minutes % 60;
+
+    time_num_buffer[0] = time_hours / 10;
+    time_num_buffer[1] = (time_hours % 10) | DISPLAY_DOT;
+    time_num_buffer[2] = time_minutes / 10;
+    time_num_buffer[3] = (time_minutes % 10) | DISPLAY_DOT;
+    time_num_buffer[4] = time_seconds / 10;
+    time_num_buffer[5] = time_seconds % 10;
 
     num_disp->displayNumBuffer(time_num_buffer);
 }

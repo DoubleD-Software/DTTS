@@ -186,7 +186,7 @@ void DTTSServer::begin() {
 
     for (String endpoint : htmlEndpoints) {
         String endpointPath = "/website" + endpoint + ".html";
-        server.serveStatic(endpoint.c_str(), SD, endpointPath.c_str());
+        server.serveStatic(endpoint.c_str(), SD, endpointPath.c_str()).setCacheControl("max-age=43200");
     }
 
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -195,9 +195,11 @@ void DTTSServer::begin() {
     server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request) {
         request->redirect("/");
     });
-    server.serveStatic("/_app", SD, "/website/_app");
-    server.serveStatic("/favicon.webp", SD, "/website/favicon.webp");
+    server.serveStatic("/_app", SD, "/website/_app").setCacheControl("max-age=86400");
+    server.serveStatic("/favicon.webp", SD, "/website/favicon.webp").setCacheControl("max-age=86400");
     server.serveStatic("/DigitalNumbers-reduced.ttf", SD, "/website/DigitalNumbers-reduced.ttf");
+    server.serveStatic("/manifest.json", SD, "/website/manifest.json").setCacheControl("max-age=86400");
+    server.serveStatic("/app_icon.webp", SD, "/website/app_icon.webp").setCacheControl("max-age=86400");
 
     server.addHandler(&ws);
 
