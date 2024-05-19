@@ -47,10 +47,12 @@
     <div class="bg-bg-light p-4 rounded-lg w-full text-white">
         <p class="text-2xl mb-4 text-center font-bold">Runden</p>
         <div class="flex justify-center mx-8">
-            <input class="w-full rounded bg-bg-lightest text-center" type="number" on:input={validateFirstInput} bind:value={modalLaps}
+            <input class="w-full rounded bg-bg-lightest text-center" type="number" on:input={validateFirstInput}
+                   on:keydown={(e) => e.key === 'Enter' && document.getElementById('second').focus()} bind:value={modalLaps}
                    placeholder="1">
             <span class="text-tx-gray px-2">,</span>
-            <input class="w-full rounded bg-bg-lightest text-center" type="number" on:input={validateSecondInput} bind:value={modalFractionLaps}
+            <input id="second" class="w-full rounded bg-bg-lightest text-center" type="number" on:input={validateSecondInput}
+                   on:keydown={(e) => e.key === 'Enter' && setLaps()} bind:value={modalFractionLaps}
                    placeholder="5">
         </div>
         <p class="text-warn-red text-base pt-4 text-center">{modalMessage}</p>

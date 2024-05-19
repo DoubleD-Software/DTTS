@@ -25,13 +25,12 @@
 
     function toggleLengthModal() {
         showLengthModal = !showLengthModal;
-        modalMessage = "";
     }
 
     function toggleRunType(type) {
         if (runType !== type) {
+            runType = type;
             fetchGradingKeys();
-            runType = runType === 0 ? 1 : 0;
         }
     }
 
