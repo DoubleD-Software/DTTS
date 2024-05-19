@@ -320,6 +320,8 @@ void RunHandler::runSprint() {
                     finisher.student_name = participants[i].student_name;
                     sprint_finishers.push_back(finisher);
 
+                    tag_assignments.erase(tag_assignments.begin() + i);
+
                     oled->clear();
                     oled->print(String(participants[i].student_name + "\n").c_str(), 1);
                     oled->print(String(String((finisher.time / 1000) / 60) + ":" + String((finisher.time / 1000) % 60) + ":" + String(finisher.time % 1000)).c_str(), 2);
@@ -327,15 +329,15 @@ void RunHandler::runSprint() {
                 }
             }
         }
-        if (millis() - last_ws_send > 1000) {
+        if ((millis() - last_ws_send) > 1000) {
             String client_str = "1 " + String(run_time_elapsed);
             ws->textAll(client_str);
 
             JsonDocument finishers_json;
             for (int i = 0; i < sprint_finishers.size(); i++) {
                 String index = String(i);
-                finishers_json["finishers"][index]["name"] = sprint_finishers[i].student_name;
-                finishers_json["finishers"][index]["time"] = sprint_finishers[i].time;
+                finishers_json["finished"][index]["name"] = sprint_finishers[i].student_name;
+                finishers_json["finished"][index]["time"] = sprint_finishers[i].time;
             }
             String finishers_str;
             serializeJson(finishers_json, finishers_str);
@@ -375,6 +377,13 @@ void RunHandler::runSprint() {
     Serial2.write(stop_multi, sizeof(stop_multi));
     DEBUG_SER_PRINT("Stopping RFID multi read:");
     clearRfidBuf();
+
+    delay(10000);
+    oled->clear();
+    oled->print("DTTS\n", 2);
+    oled->print("DoubleD Software\n", 1);
+    oled->print(VERSION, 1);
+    num_disp->displayString("ddsoft,");
 }
 
 /**
@@ -435,10 +444,12 @@ void RunHandler::runLapRun() {
             ws->textAll(client_str);
 
             JsonDocument finishers_json;
-            for (int i = 0; i < sprint_finishers.size(); i++) {
+            for (int i = 0; i < lap_run_finishers.size(); i++) {
+                if (lap_run_finishers[i].total_time == 0) continue;
+
                 String index = String(i);
-                finishers_json["finishers"][index]["name"] = sprint_finishers[i].student_name;
-                finishers_json["finishers"][index]["time"] = sprint_finishers[i].time;
+                finishers_json["finished"][index]["name"] = lap_run_finishers[i].student_name;
+                finishers_json["finished"][index]["time"] = lap_run_finishers[i].total_time;
             }
             String finishers_str;
             serializeJson(finishers_json, finishers_str);
@@ -483,6 +494,13 @@ void RunHandler::runLapRun() {
     Serial2.write(stop_multi, sizeof(stop_multi));
     DEBUG_SER_PRINT("Stopping RFID multi read:");
     clearRfidBuf();
+
+    delay(10000);
+    oled->clear();
+    oled->print("DTTS\n", 2);
+    oled->print("DoubleD Software\n", 1);
+    oled->print(VERSION, 1);
+    num_disp->displayString("ddsoft,");
 }
 
 /**
