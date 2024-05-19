@@ -1,5 +1,4 @@
 <script>
-    import img from '$lib/images/dtts.webp'
     import ArrowRight from "$lib/icons/ArrowRightIcon.svelte";
     import { PUBLIC_API_URL } from "$env/static/public";
     import { dateToJulian } from "$lib/util.js";
@@ -33,7 +32,7 @@
 </script>
 
 <div class="flex justify-center pt-[10%]">
-    <img src="{img}" alt="DTTS logo" class="w-80" />
+    <img src="/dtts.webp" alt="DTTS logo" class="w-80" />
 </div>
 <div class="m-5">
     <p class="text-tx-gray text-xl mt-2 mb-1">Benutzername</p>
