@@ -9,14 +9,7 @@ body {
 }
 
 .input-tx {
-  background-color: theme('colors.bg-light');
-  width: 100%;
-  color: white;
-  height: 2.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-weight: theme('fontWeight.medium');
-  font-size: theme('fontSize.lg');
+  @apply bg-bg-light text-white w-full h-10 p-2 rounded-md font-medium text-lg;
 }
 
 .input-tx:focus {
@@ -24,30 +17,17 @@ body {
 }
 
 .confirm-btn {
-  background-color: theme('colors.cf-green');
-  width: 100%;
-  border-radius: 0.5rem;
-  height: 2.5rem;
-  color: black;
-  fill: black;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+  @apply bg-cf-green w-full h-10 rounded-md font-medium
+  text-lg fill-black relative content-center justify-center
+  flex text-black items-center;
 }
 
 .btn-icon {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-right: 0.5rem;
+  @apply ml-auto flex items-center justify-center pr-2;
 }
 
 .btn-label {
-  font-weight: bold;
-  margin-left: auto;
-  position: absolute;
+  @apply ml-auto font-bold absolute;
 }
 
 @font-face {

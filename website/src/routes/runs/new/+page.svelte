@@ -7,14 +7,12 @@
     import {formatDate, dateToJulian} from "$lib/util.js";
     import LockedIcon from "$lib/icons/LockedIcon.svelte";
     import LengthModal from "$lib/components/LengthModal.svelte";
+    import LapsModal from "$lib/components/LapsModal.svelte";
 
     let classes = {};
     let message = "";
-    let modalMessage = "";
     let length = 100;
     let laps = 1.0;
-    let modalLaps = 1;
-    let modalFractionLaps = 0;
     let showLengthModal = false;
     let showLapsModal = false;
     let runType = 0;
@@ -42,7 +40,6 @@
             return;
         }
         showLapsModal = !showLapsModal;
-        modalMessage = "";
     }
 
     async function fetchClasses() {
@@ -142,19 +139,9 @@
         length = modalLength;
     }
 
-    function setLaps() {
-        if (modalLaps <= 0) {
-            modalMessage = "Die Anzahl der Runden muss größer als 0 sein.";
-        } else if (modalLaps > 100) {
-            modalMessage = "Die Anzahl der Runden darf nicht größer als 100 sein.";
-        } else if (modalFractionLaps <= 0) {
-            modalMessage = "Die Anzahl der Teilrunden muss größer als 0 sein.";
-        } else if (modalFractionLaps > 9) {
-            modalMessage = "Die Anzahl der Teilrunden darf nicht größer als 9 sein.";
-        } else {
-            laps = modalLaps + modalFractionLaps / 10;
-            toggleLapsModal();
-        }
+    function setLaps(newLaps) {
+        laps = newLaps;
+        toggleLapsModal();
     }
 
     function onSelectClass() {
@@ -204,27 +191,7 @@
     <LengthModal length={length} set={setLength} onClose={toggleLengthModal} />
 {/if}
 {#if showLapsModal}
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-5 text-xl z-40">
-        <div class="bg-bg-light p-4 rounded-lg w-full text-white">
-            <p class="text-2xl mb-4 text-center font-bold">Runden</p>
-            <div class="flex justify-center mx-8">
-                <input class="w-full rounded bg-bg-lightest text-center" type="number" bind:value={modalLaps}
-                       placeholder="1">
-                <span class="text-tx-gray px-2">,</span>
-                <input class="w-full rounded bg-bg-lightest text-center" type="number" bind:value={modalFractionLaps}
-                       placeholder="5">
-            </div>
-            <p class="text-warn-red text-base pt-4 text-center">{modalMessage}</p>
-            <div class="flex justify-between gap-4 mt-4 text-base">
-                <button class="bg-gray-300 text-black font-bold py-2 px-4 rounded" on:click={toggleLapsModal}>
-                    Abbrechen
-                </button>
-                <button class="bg-cf-green text-black font-bold py-2 px-4 rounded" on:click={setLaps}>
-                    Speichern
-                </button>
-            </div>
-        </div>
-    </div>
+    <LapsModal laps={laps} set={setLaps} onClose={toggleLapsModal} />
 {/if}
 <div class="p-5 pb-0 text-white">
     <div class="mb-4">
@@ -285,9 +252,9 @@
     </div>
     <div class="mb-4">
         <p class="block text-xl mb-1 text-tx-gray">Runden</p>
-        <button id="laps" class="input-tx font-bold" on:click={toggleLapsModal}><span
-                class="font-bold text-xl">{runType === 1 ? laps : '--'}</span> <span
-                class="text-tx-gray text-lg">Runde(n)</span>
+        <button id="laps" class="input-tx font-bold" on:click={toggleLapsModal}>
+            <span class="font-bold text-xl">{runType === 1 ? laps.toString().replace('.', ',') : '--'}</span>
+            <span class="text-tx-gray text-lg">Runde(n)</span>
         </button>
     </div>
     <p class="text-warn-red {message !== '' ? 'pb-1' : '' }">{message}</p>
