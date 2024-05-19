@@ -1,13 +1,15 @@
 <script>
-    import {onMount} from "svelte";
+    import {afterUpdate, onMount} from "svelte";
 
     export let type;
     export let entry;
     export let onClose;
+    export let nextEntry;
 
-    let first = undefined;
-    let second = undefined;
+    let first;
+    let second;
     let message = '';
+    let mounted = false;
 
     function saveTime() {
         if (first === undefined || second === undefined) {
@@ -38,6 +40,13 @@
         onClose();
     }
 
+    function next() {
+        saveTime();
+        if (message === '') {
+            nextEntry();
+        }
+    }
+
     function validateFirstInput(event) {
         const value = event.target.value;
         if (!/^\d*$/.test(value)) {
@@ -54,7 +63,11 @@
         second = event.target.value;
     }
 
-    onMount(() => {
+    function initialize() {
+        if (!mounted) return;
+        message = '';
+        first = undefined;
+        second = undefined;
         if (entry && entry.time > 0) {
             if (type === 0) {
                 first = Math.floor(entry.time / 1000);
@@ -64,8 +77,17 @@
                 second = Math.floor((entry.time % 60000) / 1000);
             }
         }
-        document.getElementById('first').focus()
+        document.getElementById('first').focus();
+    }
+
+    onMount(() => {
+        mounted = true;
+        initialize();
     });
+
+    $: if (entry) {
+        initialize();
+    }
 </script>
 
 <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-5 text-xl z-40">
@@ -94,8 +116,11 @@
         </div>
         <p class="text-warn-red text-base pt-4 text-center">{message}</p>
         <div class="flex justify-between gap-4 mt-4 text-base">
-            <button class="bg-gray-300 text-black font-bold py-2 px-4 rounded" on:click={onClose}>
+            <button class="bg-warn-red text-white font-bold py-2 px-4 rounded" on:click={onClose}>
                 Abbrechen
+            </button>
+            <button class="bg-gray-300 text-black font-bold py-2 px-4 rounded" on:click={next}>
+                Weiter
             </button>
             <button class="bg-cf-green text-black font-bold py-2 px-4 rounded" on:click={saveTime}>
                 Speichern

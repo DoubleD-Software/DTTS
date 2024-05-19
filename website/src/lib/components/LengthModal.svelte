@@ -47,7 +47,7 @@
         </div>
         <p class="text-warn-red text-base pt-4 text-center">{modalMessage}</p>
         <div class="flex justify-between gap-4 mt-4 text-base">
-            <button class="bg-gray-300 text-black font-bold py-2 px-4 rounded" on:click={toggleLengthModal}>
+            <button class="bg-warn-red text-black font-bold py-2 px-4 rounded" on:click={toggleLengthModal}>
                 Abbrechen
             </button>
             <button class="bg-cf-green text-black font-bold py-2 px-4 rounded" on:click={setLength}>

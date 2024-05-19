@@ -45,6 +45,14 @@
         length = newLength;
     }
 
+    function nextEntry() {
+        const currentIndex = entries.findIndex(entry => entry.grade === currentTimeEntry.grade);
+        if (currentIndex !== -1 && currentIndex < entries.length - 1) {
+            currentTimeEntry = entries[currentIndex + 1];
+            showModal = true;
+        }
+    }
+
     async function save() {
         if (!entries.every(entry => entry.time > 0)) {
             message = "Bitte geben Sie gültige Zeiten für alle Noten an.";
@@ -92,7 +100,7 @@
 </script>
 
 {#if showModal}
-    <TimeModal type={type} entry={currentTimeEntry} onClose={closeModal}/>
+    <TimeModal type={type} entry={currentTimeEntry} nextEntry={nextEntry} onClose={closeModal}/>
 {/if}
 {#if showLengthModal}
     <LengthModal length={length} set={setLength} onClose={toggleLengthModal} />
@@ -148,7 +156,7 @@
             </tr>
             </thead>
             <tbody>
-            {#each Object.values(entries) as entry}
+            {#each entries as entry}
                 <tr class="bg-bg-lightest">
                     <td class="py-2 text-center font-bold">{entry.grade.replace('.', ',')}</td>
                     <td class="py-2">
