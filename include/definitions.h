@@ -11,7 +11,7 @@
 #define NUM_DISP_CLK 25
 #define NUM_DISP_DIO 26
 
-#define BUTTON_PIN 0 // Needs to be changed
+#define BUTTON_PIN 22
 
 #define SD_CS 5
 
