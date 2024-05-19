@@ -55,7 +55,7 @@ void DTTSRestApi::getRun(AsyncWebServerRequest *request) {
             doc["grade"] = String(run_info.grade, 2);
             doc["length"] = run_info.length;
             for (int i = 0; i < run_info.laps.size(); i++) {
-                String index = String(i);
+                String index = String(i + 1);
                 doc["rounds"][index]["length"] = run_info.laps[i].length;
                 doc["rounds"][index]["time"] = run_info.laps[i].time;
             }
