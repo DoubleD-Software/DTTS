@@ -174,6 +174,42 @@ void DTTSServer::begin() {
     server.on("/api/active", HTTP_GET, [&](AsyncWebServerRequest *request) {
         rest_api.getActive(request);
     });
+    server.on("/api/admin/studentsReset",
+        HTTP_POST,
+        [](AsyncWebServerRequest *request) {request->send(400);},
+        NULL,
+        [&](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+            String data_str = "";
+            for (int i = 0; i < len; i++) {
+                data_str += (char)data[i];
+            }
+            bool resetted = rest_api.resetStudents(request, data_str);
+
+            if (resetted) {
+                server.end();
+                DEBUG_SER_PRINTLN("Student reset completed. Restarting...");
+                esp_restart();
+            }
+        }
+    );
+    server.on("/api/admin/factoryReset",
+        HTTP_POST,
+        [](AsyncWebServerRequest *request) {request->send(400);},
+        NULL,
+        [&](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+            String data_str = "";
+            for (int i = 0; i < len; i++) {
+                data_str += (char)data[i];
+            }
+            bool resetted = rest_api.factoryReset(request, data_str);
+
+            if (resetted) {
+                server.end();
+                DEBUG_SER_PRINTLN("Factory reset completed. Restarting...");
+                esp_restart();
+            }
+        }
+    );
 
     String htmlEndpoints[] = {
         "/runs/view", "/runs/edit", "/runs/new", "/runs", 

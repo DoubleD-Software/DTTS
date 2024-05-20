@@ -13,6 +13,8 @@ void sysHalt(int error_code, const char *msg) {
     oled.clear();
     oled.print(oled_str, 1, WHITE);
     DEBUG_SER_PRINTLN(oled_str);
-    DEBUG_SER_PRINTLN("\nA fatal error has occurred and the system cannot continue. System halted.");
-    while(1); // Replace with task stop and full halt
+    DEBUG_SER_PRINTLN("A fatal error has occurred and the system cannot continue. System halted.");
+    while(1) {
+        delay(1000);
+    }
 }

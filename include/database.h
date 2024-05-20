@@ -280,6 +280,8 @@ class Database {
         int insertSprintResults(int run_id, std::vector<FinisherSprint> finishers);
         PreLapRunInfo getPreLapRunInfo(int run_id);
         int insertLapRunResults(int run_id, std::vector<FinisherLapRun> finishers);
+        int deleteStudents(String password);
+        int factoryReset(String password);
 
     private:
         void createTables();

@@ -17,10 +17,11 @@
 
 #define RFID_BAUD 115200
 
-#define DB_PATH "/sd/dtts.db"
-
 #define ADMIN_USERNAME "admin"
 #define ADMIN_PASSWORD "admin"
+
+#define WIFI_SSID "DTTS"
+#define WIFI_PASSWORD "doubledsoftware"
 
 #define DEBUG
 

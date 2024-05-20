@@ -131,6 +131,7 @@ int RunHandler::getActiveRunId() {
 void RunHandler::handle() {
     ws->cleanupClients();
     if (run_active) {
+        update_idle_disp = true;
         if (dtts_armed) {
             // Do some pre-calculations for a lap run
             if (active_run_type == RUN_TYPE_LAP_RUN) {
@@ -176,13 +177,20 @@ void RunHandler::handle() {
                     ws_data_received = false;
                     ws->closeAll();
                     oled->clear();
-                    oled->print("Lauf abge-brochen!", 2);
+                    oled->print("Lauf\ngestoppt!", 2);
+                    num_disp->displayString("Fertig");
                     run_active = false;
                     db->deleteRun(active_run_id);
+                    delay(10000);
                     return;
                 }
             }
+            DEBUG_SER_PRINT("Starting RFID multi read:");
+            Serial2.write(read_multi, sizeof(read_multi));
+            clearRfidBuf();
             run_in_progress = true;
+            oled->clear();
+            oled->print("Lauf\ngestartet!", 2);
             ws->textAll("1 0");
             if (active_run_type == RUN_TYPE_SPRINT) {
                 runSprint();
@@ -192,6 +200,13 @@ void RunHandler::handle() {
         } else if (tag_assign_active) {
             startTagAssignment();
         }
+    } else if (update_idle_disp) {
+        update_idle_disp = false;
+        oled->clear();
+        oled->print("DTTS\n", 2);
+        oled->print("System betriebsbereit\n", 1);
+        oled->print("WLAN aktiv", 1);
+        num_disp->displayString(" DTTS ");
     }
 }
 
@@ -219,6 +234,9 @@ void RunHandler::handleWsData(void *arg, uint8_t *data, size_t len) {
 */
 void RunHandler::startTagAssignment() {
     DEBUG_SER_PRINTLN("Starting tag assignment...");
+
+    oled->clear();
+    oled->print("Tags\nzuordnen..", 2);
 
     DEBUG_SER_PRINT("Starting RFID multi read:");
     Serial2.write(read_multi, sizeof(read_multi));
@@ -292,7 +310,15 @@ void RunHandler::startTagAssignment() {
     dtts_armed = true;
     run_state = RUN_ACTIVE;
     ws->closeAll();
-    num_disp->displayString("------"); // Maybe an animation in the future
+    num_disp->displayString("Scharf");
+
+    clearRfidBuf(false, false);
+    Serial2.write(stop_multi, sizeof(stop_multi));
+    DEBUG_SER_PRINT("Stopping RFID multi read:");
+    clearRfidBuf();
+
+    oled->clear();
+    oled->print("System\nscharf!", 2);
 }
 
 /**
@@ -304,8 +330,10 @@ void RunHandler::runSprint() {
     run_start_time = millis();
     unsigned long last_ws_send = millis();
 
+    int participants_size_before = participants.size();
+
     while(true) {
-        if (sprint_finishers.size() == participants.size()) {
+        if (sprint_finishers.size() == participants_size_before) {
             break;
         }
 
@@ -321,10 +349,11 @@ void RunHandler::runSprint() {
                     sprint_finishers.push_back(finisher);
 
                     tag_assignments.erase(tag_assignments.begin() + i);
+                    participants.erase(participants.begin() + i);
 
                     oled->clear();
-                    oled->print(String(participants[i].student_name + "\n").c_str(), 1);
-                    oled->print(String(String((finisher.time / 1000) / 60) + ":" + String((finisher.time / 1000) % 60) + ":" + String(finisher.time % 1000)).c_str(), 2);
+                    oled->print(String(String((finisher.time / 1000) % 60) + ":" + String((finisher.time / 1000) / 60) + ":" + String(finisher.time / 1000) + "\n").c_str(), 2);
+                    oled->print(participants[i].student_name.c_str(), 1);
                     break;
                 }
             }
@@ -354,7 +383,8 @@ void RunHandler::runSprint() {
             ws_data_received = false;
             ws->closeAll();
             oled->clear();
-            oled->print("Lauf abge-brochen!", 2);
+            oled->print("Lauf\ngestoppt!", 2);
+            num_disp->displayString("Fertig");
             run_active = false;
             db->deleteRun(active_run_id);
 
@@ -362,6 +392,8 @@ void RunHandler::runSprint() {
             Serial2.write(stop_multi, sizeof(stop_multi));
             DEBUG_SER_PRINT("Stopping RFID multi read:");
             clearRfidBuf();
+
+            delay(10000);
             return;
         }
     }
@@ -369,7 +401,9 @@ void RunHandler::runSprint() {
     ws->textAll(client_str);
     ws->closeAll();
     oled->clear();
-    oled->print("Lauf ende!", 2);
+    oled->print("Lauf\nbeendet!", 2);
+    num_disp->displayString("Fertig");
+
     db->insertSprintResults(active_run_id, sprint_finishers);
     run_active = false;
 
@@ -379,11 +413,6 @@ void RunHandler::runSprint() {
     clearRfidBuf();
 
     delay(10000);
-    oled->clear();
-    oled->print("DTTS\n", 2);
-    oled->print("DoubleD Software\n", 1);
-    oled->print(VERSION, 1);
-    num_disp->displayString("ddsoft,");
 }
 
 /**
@@ -427,13 +456,8 @@ void RunHandler::runLapRun() {
                         num_lap_run_finishers++;
 
                         oled->clear();
-                        oled->print(String(participants[i].student_name + "\n").c_str(), 1);
-                        oled->print(String(String((total_time / 1000) / 60) + ":" + String((total_time / 1000) % 60) + ":" + String(total_time % 1000)).c_str(), 2);
-                    } else {
-                        oled->clear();
-                        oled->print(String(participants[i].student_name + "\n").c_str(), 1);
-                        oled->print(String("Runde: " + String(lrf_lap_counts[i]) + "\n").c_str(), 1);
-                        oled->print(String(String((current_lap_time / 1000) / 60) + ":" + String((current_lap_time / 1000) % 60) + ":" + String(current_lap_time % 1000)).c_str(), 2);
+                        oled->print(String(String((total_time / 1000) % 60) + ":" + String((total_time / 1000) / 60) + ":" + String(total_time / 1000) + "\n").c_str(), 2);
+                        oled->print(participants[i].student_name.c_str(), 1);
                     }
                     break;
                 }
@@ -466,7 +490,8 @@ void RunHandler::runLapRun() {
             ws_data_received = false;
             ws->closeAll();
             oled->clear();
-            oled->print("Lauf abge-brochen!", 2);
+            oled->print("Lauf\ngestoppt!", 2);
+            num_disp->displayString("Fertig");
             run_active = false;
             db->deleteRun(active_run_id);
 
@@ -474,6 +499,8 @@ void RunHandler::runLapRun() {
             Serial2.write(stop_multi, sizeof(stop_multi));
             DEBUG_SER_PRINT("Stopping RFID multi read:");
             clearRfidBuf();
+
+            delay(10000);
             return;
         }
         for (int i = 0; i < tag_locks.size(); i++) {
@@ -486,7 +513,8 @@ void RunHandler::runLapRun() {
     ws->textAll(client_str);
     ws->closeAll();
     oled->clear();
-    oled->print("Lauf ende!", 2);
+    oled->print("Lauf\nbeendet!", 2);
+    num_disp->displayString("Fertig");
     db->insertLapRunResults(active_run_id, lap_run_finishers);
     run_active = false;
 
@@ -495,12 +523,7 @@ void RunHandler::runLapRun() {
     DEBUG_SER_PRINT("Stopping RFID multi read:");
     clearRfidBuf();
 
-    delay(10000);
-    oled->clear();
-    oled->print("DTTS\n", 2);
-    oled->print("DoubleD Software\n", 1);
-    oled->print(VERSION, 1);
-    num_disp->displayString("ddsoft,");
+    delay(10000);    
 }
 
 /**

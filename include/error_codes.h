@@ -6,5 +6,6 @@
 #define DB_CREATE_FAILED 3
 #define SD_FAILED 4
 #define TABLE_CREATE_FAILED 5
+#define RECOVERY_FAILED 6
 
 #endif

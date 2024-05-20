@@ -902,6 +902,76 @@ void DTTSRestApi::getActive(AsyncWebServerRequest *request) {
 }
 
 /**
+ * Resets all student data and their associated runs, but keeps classes and grading keys in the database.
+ * @param request Pointer to the request object.
+ * @param data String containing the JSON data.
+*/
+bool DTTSRestApi::resetStudents(AsyncWebServerRequest *request, String data) {
+    if (access_level != ACCESS_ADMIN) {
+        request->send(403, "application/json", "{}");
+        return false;
+    }
+    if (checkAuth(request) == ACCESS_DENIED) return false;
+
+    int request_result = 200;
+    JsonDocument doc;
+    deserializeJson(doc, data);
+    bool resetted = false;
+    if (doc.isNull()) {
+        request_result = 400;
+    } else {
+        if (doc.containsKey("password")) {
+            String password = doc["password"];
+            if (db->deleteStudents(password) == DB_SUCCESS) {
+                resetted = true;
+            } else {
+                request_result = 400;
+            }
+        } else {
+            request_result = 400;
+        }
+    }
+    request->send(request_result, "application/json", "{}");
+
+    return resetted;
+}
+
+/**
+ * Performs a factory reset of the system
+ * @param request Pointer to the request object.
+ * @param data String containing the JSON data.
+*/
+bool DTTSRestApi::factoryReset(AsyncWebServerRequest *request, String data) {
+    if (access_level != ACCESS_ADMIN) {
+        request->send(403, "application/json", "{}");
+        return false;
+    }
+    if (checkAuth(request) == ACCESS_DENIED) return false;
+
+    int request_result = 200;
+    JsonDocument doc;
+    deserializeJson(doc, data);
+    bool resetted = false;
+    if (doc.isNull()) {
+        request_result = 400;
+    } else {
+        if (doc.containsKey("password")) {
+            String password = doc["password"];
+            if (db->factoryReset(password) == DB_SUCCESS) {
+                resetted = true;
+            } else {
+                request_result = 400;
+            }
+        } else {
+            request_result = 400;
+        }
+    }
+    request->send(request_result, "application/json", "{}");
+
+    return resetted;
+}
+
+/**
  * This function checks the session ID of a request and returns if the user is logged in or not.
  * @param request Pointer to the request object.
 */

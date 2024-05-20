@@ -65,6 +65,7 @@ class RunHandler {
         unsigned long run_time_elapsed;
         int num_lap_run_finishers;
         int lr_total_laps;
+        bool update_idle_disp = true;
         
         void handleWsData(void *arg, uint8_t *data, size_t len);
         void startTagAssignment();

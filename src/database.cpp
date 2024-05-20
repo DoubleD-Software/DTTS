@@ -1758,7 +1758,7 @@ int Database::patchTeacher(int teacher_id, String name, String username, String 
     }
     sqlite3_finalize(teacher_stmt);
 
-    sql = "SELECT * FROM teachers WHERE username = '" + username + "';";
+    sql = "SELECT * FROM teachers WHERE username = '" + username + "' AND id != " + String(teacher_id) + ";";
     if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &teacher_stmt, 0) != SQLITE_OK) {
         DEBUG_SER_PRINT("Failed to prepare statement: ");
         DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
@@ -2295,6 +2295,104 @@ int Database::insertLapRunResults(int run_id, std::vector<FinisherLapRun> finish
         DEBUG_SER_PRINT("Failed to update class: ");
         DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
         return DB_FAILED;
+    }
+
+    return DB_SUCCESS;
+}
+
+/**
+ * Deletes all students and their associated runs from the system
+ * @param password The admin password as validation of this action
+ * @return A status code defined in database.h
+*/
+int Database::deleteStudents(String password) {
+    String sql = "SELECT * FROM teachers WHERE administrator = 1;";
+    sqlite3_stmt* teacher_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &teacher_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(teacher_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(teacher_stmt) != SQLITE_ROW) {
+        sqlite3_finalize(teacher_stmt);
+        return DB_NOT_FOUND;
+    }
+    String stored_password = String((const char*) sqlite3_column_text(teacher_stmt, 3));
+    sqlite3_finalize(teacher_stmt);
+
+    if (password != stored_password) {
+        return DB_FAILED;
+    }
+
+    sql = "DELETE FROM laps;";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to delete laps: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+
+    sql = "DELETE FROM participants;";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to delete participants: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+
+    sql = "DELETE FROM results;";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to delete results: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+
+    sql = "DELETE FROM runs;";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to delete runs: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+
+    sql = "DELETE FROM students;";
+    if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to delete students: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        return DB_FAILED;
+    }
+
+    return DB_SUCCESS;
+}
+
+/**
+ * Performs a factory reset of the system, deleting the database file
+ * @param password The admin password as validation of this action
+ * @return A status code defined in database.h
+ * @note The system should not handle any other database operations after this and restart asap
+*/
+int Database::factoryReset(String password) {
+    String sql = "SELECT * FROM teachers WHERE administrator = 1;";
+    sqlite3_stmt* teacher_stmt;
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &teacher_stmt, 0) != SQLITE_OK) {
+        DEBUG_SER_PRINT("Failed to prepare statement: ");
+        DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
+        sqlite3_finalize(teacher_stmt);
+        return DB_FAILED;
+    }
+    if (sqlite3_step(teacher_stmt) != SQLITE_ROW) {
+        sqlite3_finalize(teacher_stmt);
+        return DB_NOT_FOUND;
+    }
+    String stored_password = String((const char*) sqlite3_column_text(teacher_stmt, 3));
+    sqlite3_finalize(teacher_stmt);
+
+    if (password != stored_password) {
+        return DB_FAILED;
+    }
+
+    close();
+    if (!SD.remove("/dtts.db")) {
+        DEBUG_SER_PRINTLN("Failed to delete database file");
+        sysHalt(SD_FAILED, "Failed to delete db file");
     }
 
     return DB_SUCCESS;

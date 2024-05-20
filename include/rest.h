@@ -39,6 +39,8 @@ class DTTSRestApi {
         void whoAmI(AsyncWebServerRequest *request);
         void authenticate(AsyncWebServerRequest *request, String data);
         void getActive(AsyncWebServerRequest *request);
+        bool resetStudents(AsyncWebServerRequest *request, String data);
+        bool factoryReset(AsyncWebServerRequest *request, String data);
         
     private:
         Database *db;
