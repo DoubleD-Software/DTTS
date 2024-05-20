@@ -4,6 +4,7 @@
     import DateSelector from "$lib/components/DateSelector.svelte";
     import RunListEntry from "$lib/components/RunListEntry.svelte";
     import AddIcon from "$lib/icons/AddIcon.svelte";
+    import { onMount } from 'svelte';
 
     let selectedDate = new Date();
 
@@ -12,7 +13,7 @@
         fetchRuns();
     }
 
-    let runs = {};
+    let runs = undefined;
 
     async function fetchRuns() {
         try {
@@ -31,22 +32,24 @@
             } else {
                 console.error("Failed to fetch data.");
             }
+            console.log('wadaheel');
         } catch (error) {
-            console.error("Error:", error);
+            console.error("Error: ", error);
         }
     }
 </script>
 
 <DateSelector on:dateChange={handleDateChange}/>
 <div class="m-3 text-white">
-    {#each runs as [id, run]}
-        <a href="/runs/view?id={id}">
-            <RunListEntry type={run.type} length={run.length} teacher={run.teacher} runClass={run.class}
-                          avgTime={run.avg_time} avgGrade={run.avg_grade.replace('.', ',')}/>
-        </a>
-    {/each}
-    {#if runs.length === 0}
+    {#if runs === undefined || runs.length === 0}
         <p class="text-center text-xl">Keine Läufe an diesem Tag.</p>
+    {:else}
+        {#each runs as [id, run]}
+            <a href="/runs/view?id={id}">
+                <RunListEntry type={run.type} length={run.length} teacher={run.teacher} runClass={run.class}
+                              avgTime={run.avg_time} avgGrade={run.avg_grade.replace('.', ',')}/>
+            </a>
+        {/each}
     {/if}
 </div>
 

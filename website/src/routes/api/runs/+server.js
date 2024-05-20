@@ -11,11 +11,12 @@ export async function GET({url}) {
         if (julianDate === "2460431") {
             return json({});
         }
+        let random = Math.floor(Math.random() * 9950) + 50;
         return json(
             {
                 "0": {
                     "type": 0,
-                    "length": 100,
+                    "length": random,
                     "teacher": "Hr. Schwarzenegger",
                     "class": "9y",
                     "avg_grade": "2.75",
