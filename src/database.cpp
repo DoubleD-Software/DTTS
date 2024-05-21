@@ -394,7 +394,7 @@ RunInfoSpecific Database::getRunInfo(int run_id) {
             } else {
                 student.name = UNKNOWN_NAME;
             }
-            student.gender = sqlite3_column_int(result_stmt, 1);
+            student.gender = sqlite3_column_int(student_stmt, 1);
             sqlite3_finalize(student_stmt);
             student.time = sqlite3_column_int(result_stmt, 3);
             student.grade = sqlite3_column_double(result_stmt, 6);
@@ -683,7 +683,7 @@ StudentInfo Database::getStudentInfo(int student_id) {
     while (sqlite3_step(student_stmt) == SQLITE_ROW && count < 1) {
         count++;
         student.student_name = String((const char*) sqlite3_column_text(student_stmt, 1));
-        student.gender = sqlite3_column_int(student_stmt, 1);
+        student.gender = sqlite3_column_int(student_stmt, 2);
         sqlite3_stmt* class_stmt;
         String class_sql = "SELECT name FROM classes WHERE id = " + String(sqlite3_column_int(student_stmt, 3)) + ";";
         if (sqlite3_prepare_v2(this->db, class_sql.c_str(), -1, &class_stmt, 0) != SQLITE_OK) {

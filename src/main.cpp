@@ -12,11 +12,15 @@
 #include <database.h>
 #include <runlogic.h>
 #include <integrity.h>
+#include <ESPAsyncDNSServer.h>
 
 OLED oled(OLED_SDA, OLED_SCL, OLED_WIDTH, OLED_HEIGHT);
 TM1637 num_disp(NUM_DISP_CLK, NUM_DISP_DIO, 6);
 Database db("/sd/dtts.db");
 DTTSServer server(&db, &oled, &num_disp);
+IPAddress local_ip(192, 168, 0, 1);
+IPAddress subnet_mask(255, 255, 255, 0);
+AsyncDNSServer dns_server;
 
 void setup() {
     DEBUG_SER_INIT(115200);
@@ -57,11 +61,19 @@ void setup() {
 
     WiFi.mode(WIFI_AP);
     WiFi.setTxPower(WIFI_POWER_19_5dBm);
-    WiFi.softAPConfig(IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1), IPAddress(255, 255, 255, 0));
+    WiFi.softAPConfig(local_ip, local_ip, subnet_mask);
+    WiFi.setHostname("DTTS");
+    WiFi.enableLongRange(true);
     WiFi.softAP(WIFI_SSID, WIFI_PASSWORD, 1, 0, 1);
 
     db.open();
     server.begin();
+
+    dns_server.setErrorReplyCode(AsyncDNSReplyCode::ServerFailure);
+
+    DEBUG_SER_PRINTLN("Starting DNS Server...");
+    dns_server.start(DNS_PORT, "*", local_ip);
+    DEBUG_SER_PRINTLN("DNS startet. Resolving on *");
 
     pinMode(BUTTON_PIN, INPUT_PULLUP);
 

@@ -23,6 +23,8 @@
 #define WIFI_SSID "DTTS"
 #define WIFI_PASSWORD "doubledsoftware"
 
+#define DNS_PORT 53
+
 #define DEBUG
 
 #endif
