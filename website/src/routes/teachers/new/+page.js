@@ -2,7 +2,7 @@ export const ssr = false;
 
 /** @type {import('./$types').PageLoad} */
 export async function load({ data }) {
-    return {
-        title: 'Neuer Lehrer'
-    };
+	return {
+		title: 'Neuer Lehrer'
+	};
 }

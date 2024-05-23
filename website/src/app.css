@@ -3,34 +3,34 @@
 @tailwind utilities;
 
 body {
-  background-color: theme('colors.bg');
-  font-family: Inter, sans-serif;
-  font-weight: theme('fontWeight.medium');
+    background-color: theme('colors.bg');
+    font-family: Inter, sans-serif;
+    font-weight: theme('fontWeight.medium');
 }
 
 .input-tx {
-  @apply bg-bg-light text-white w-full h-10 p-2 rounded-md font-medium text-lg;
+    @apply bg-bg-light text-white w-full h-10 p-2 rounded-md font-medium text-lg;
 }
 
 .input-tx:focus {
-  outline: none;
+    outline: none;
 }
 
 .confirm-btn {
-  @apply bg-cf-green w-full h-10 rounded-md font-medium
-  text-lg fill-black relative content-center justify-center
-  flex text-black items-center;
+    @apply bg-cf-green w-full h-10 rounded-md font-medium
+    text-lg fill-black relative content-center justify-center
+    flex text-black items-center;
 }
 
 .btn-icon {
-  @apply ml-auto flex items-center justify-center pr-2;
+    @apply ml-auto flex items-center justify-center pr-2;
 }
 
 .btn-label {
-  @apply ml-auto font-bold absolute;
+    @apply ml-auto font-bold absolute;
 }
 
 @font-face {
-  font-family: digitalnumbers;
-  src: url('/DigitalNumbers-reduced.ttf');
+    font-family: digitalnumbers;
+    src: url('/DigitalNumbers-reduced.ttf');
 }

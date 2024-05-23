@@ -1,17 +1,15 @@
 <script>
-	import { formatTime } from '$lib/util.js';
-	import { formatDate } from '$lib/util.js';
-	import { julianToDate } from '$lib/util.js';
+	import { formatDate, formatTime, julianToDate } from '$lib/util.js';
 	import Man from '$lib/icons/Man.svelte';
 	import Woman from '$lib/icons/Woman.svelte';
 	import Trash from '$lib/icons/Trash.svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import { onMount } from 'svelte';
+	import writeXlsxFile from 'write-excel-file';
+	import { DownloadIcon } from 'lucide-svelte';
 
 	export let data;
 	let json = data.data;
-	import writeXlsxFile from 'write-excel-file';
-	import { DownloadIcon } from 'lucide-svelte';
 
 	let showModal = false;
 
@@ -170,21 +168,22 @@
 	<button class="fill-warn-red absolute right-4 pt-1 scale-150 z-10" on:click={toggleModal}>
 		<Trash />
 	</button>
-
-	<button class="fill-white absolute right-4 pt-10 scale-150 z-10" on:click={download}>
+	<button class="fill-white absolute right-4 mt-12 scale-150 z-10" on:click={download}>
 		<DownloadIcon />
 	</button>
 
 	{#if showModal}
 		<div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-30">
-			<div class="bg-bg-light p-5 rounded-lg shadow-lg text-white m-5 z-40">
+			<div class="bg-bg-light p-5 rounded-lg shadow-lg text-white m-5 z-40 text-lg">
 				<p>Soll dieser Lauf wirklich gelöscht werden?</p>
-				<p class="font-bold text-lg">Dies kann nicht rückgängig gemacht werden!</p>
-				<div class="flex justify-end gap-4 mt-4">
-					<button class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded" on:click={toggleModal}>
+				<p class="font-bold">Dies kann nicht rückgängig gemacht werden!</p>
+				<div class="flex justify-between gap-4 mt-4">
+					<button class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded"
+							on:click={toggleModal}>
 						Abbrechen
 					</button>
-					<button class="bg-warn-red hover:bg-red-700 text-white font-bold py-2 px-4 rounded" on:click={deleteRun}>
+					<button class="bg-warn-red hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+							on:click={deleteRun}>
 						Löschen
 					</button>
 				</div>
@@ -220,7 +219,7 @@
 	<div class="border-t border-gray-500 pt-3">
 		{#each Object.entries(json.students) as [id, student]}
 			<a href="{json.type === 1 ? `/runs/view?id=${data.runId}&student=${id}` : ''}"
-				 class="flex justify-between items-center mb-2 bg-bg-lightest p-2 pr-3 rounded-lg">
+			   class="flex justify-between items-center mb-2 bg-bg-lightest p-2 pr-3 rounded-lg">
 				<div class="flex fill-white">
 					{#if student.gender === 1}
 						<Woman />
