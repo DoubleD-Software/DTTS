@@ -17,7 +17,6 @@
 	}
 
 	onMount(() => {
-		console.log($admin);
 		menuOpen = false;
 	});
 </script>
