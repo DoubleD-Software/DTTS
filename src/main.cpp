@@ -73,7 +73,7 @@ void setup() {
 
     DEBUG_SER_PRINTLN("Starting DNS Server...");
     dns_server.start(DNS_PORT, "*", local_ip);
-    DEBUG_SER_PRINTLN("DNS startet. Resolving on *");
+    DEBUG_SER_PRINTLN("DNS started. Resolving on *");
 
     pinMode(BUTTON_PIN, INPUT_PULLUP);
 

@@ -347,12 +347,14 @@ void RunHandler::runSprint() {
                     finisher.time = run_time_elapsed;
                     finisher.student_name = participants[i].student_name;
                     sprint_finishers.push_back(finisher);
-
                     tag_assignments.erase(tag_assignments.begin() + i);
                     participants.erase(participants.begin() + i);
 
+                    char time_str[9]; // 00:00:00
+                    snprintf(time_str, 9, "%02d:%02d:%02d", (finisher.time / 1000) / 60, (finisher.time / 1000) % 60, (finisher.time % 1000) / 10);
+
                     oled->clear();
-                    oled->print(String(String((finisher.time / 1000) % 60) + ":" + String((finisher.time / 1000) / 60) + ":" + String(finisher.time / 1000) + "\n").c_str(), 2);
+                    oled->print(time_str, 2);
                     oled->print(participants[i].student_name.c_str(), 1);
                     break;
                 }
@@ -455,8 +457,11 @@ void RunHandler::runLapRun() {
                         lap_run_finishers[i].total_time = total_time;
                         num_lap_run_finishers++;
 
+                        char time_str[9]; // 00:00:00
+                        snprintf(time_str, 9, "%02d:%02d:%02d", (total_time / 1000) / 3600, (total_time / 1000) / 60, (total_time / 1000) % 60);
+
                         oled->clear();
-                        oled->print(String(String((total_time / 1000) % 60) + ":" + String((total_time / 1000) / 60) + ":" + String(total_time / 1000) + "\n").c_str(), 2);
+                        oled->print(time_str, 2);
                         oled->print(participants[i].student_name.c_str(), 1);
                     }
                     break;
