@@ -5,6 +5,7 @@
 #include <ESPAsyncWebServer.h>
 #include <debug.h>
 #include <SD.h>
+#include <LittleFS.h>
 #include <rest.h>
 #include <database.h>
 #include <runlogic.h>

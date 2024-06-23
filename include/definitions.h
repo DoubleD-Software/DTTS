@@ -20,8 +20,8 @@
 #define ADMIN_USERNAME "admin"
 #define ADMIN_PASSWORD "admin"
 
-#define WIFI_SSID "DTTS"
-#define WIFI_PASSWORD "doubledsoftware"
+#define WIFI_SSID "DTTS2"
+#define WIFI_PASSWORD "doubledsoftwares"
 
 #define DNS_PORT 53
 

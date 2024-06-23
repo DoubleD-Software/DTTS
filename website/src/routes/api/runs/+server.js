@@ -9,7 +9,7 @@ export async function GET({ url }) {
 
 	if (julianDate !== null) {
 		if (julianDate === '2460431') {
-			return json({});
+			return new Response(null, { status: 404 });
 		}
 		let random = Math.floor(Math.random() * 9950) + 50;
 		return json(
@@ -47,11 +47,11 @@ export async function GET({ url }) {
 				'rounds': {
 					'1': {
 						'length': 150,
-						'time': 131000
+						'time': 9815
 					},
 					'2': {
 						'length': 300,
-						'time': 312000
+						'time': 31200000
 					},
 					'3': {
 						'length': 300,

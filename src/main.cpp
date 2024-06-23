@@ -11,7 +11,6 @@
 #include <server.h>
 #include <database.h>
 #include <runlogic.h>
-#include <integrity.h>
 #include <ESPAsyncDNSServer.h>
 
 OLED oled(OLED_SDA, OLED_SCL, OLED_WIDTH, OLED_HEIGHT);
@@ -30,7 +29,7 @@ void setup() {
     num_disp.begin();
     
     DEBUG_SER_PRINTLN("Initializing SD card...");
-    if(SD.begin(SD_CS, SPI, 80000000, "/sd", 8)) {
+    if(SD.begin(SD_CS, SPI, 80000000)) {
         DEBUG_SER_PRINTLN("SD card initialized.");
     } else {
         DEBUG_SER_PRINTLN("SD card initialization failed.");
@@ -38,7 +37,7 @@ void setup() {
     }
 
     DEBUG_SER_PRINTLN("Initializing LittleFS...");
-    if(LittleFS.begin()) {
+    if(LittleFS.begin(false, "/littlefs", 11)) {
         DEBUG_SER_PRINTLN("LittleFS initialized.");
     } else {
         DEBUG_SER_PRINTLN("LittleFS initialization failed.");
@@ -52,18 +51,9 @@ void setup() {
     oled.print("System startet...", 1);
     num_disp.displayString("ddsoft,");
 
-    DEBUG_SER_PRINTLN("Performing integrity check...");
-    performIntegrityCheck("/website", "/website");
-    DEBUG_SER_PRINTLN("Integrity check complete.");
-    DEBUG_SER_PRINTLN("Deleting extraneous files...");
-    deleteExtraneousFiles("/website", "/website");
-    DEBUG_SER_PRINTLN("Extraneous files deleted.");
-
     WiFi.mode(WIFI_AP);
-    WiFi.setTxPower(WIFI_POWER_19_5dBm);
     WiFi.softAPConfig(local_ip, local_ip, subnet_mask);
     WiFi.setHostname("DTTS");
-    WiFi.enableLongRange(true);
     WiFi.softAP(WIFI_SSID, WIFI_PASSWORD, 1, 0, 1);
 
     db.open();

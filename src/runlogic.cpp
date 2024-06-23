@@ -70,10 +70,10 @@ void RunHandler::init() {
     Serial2.write(set_wa, sizeof(set_wa));
     clearRfidBuf();
 
-    DEBUG_SER_PRINT("Setting RFID TX-Power:");
-    uint8_t set_tx_power[] = {0xAA, 0x00, 0xB6, 0x00, 0x02, 0x07, 0xD0, 0x8F, 0xDD};
-    Serial2.write(set_tx_power, sizeof(set_tx_power));
-    clearRfidBuf();
+    // DEBUG_SER_PRINT("Setting RFID TX-Power:");
+    // uint8_t set_tx_power[] = {0xAA, 0x00, 0xB6, 0x00, 0x02, 0x07, 0xD0, 0x8F, 0xDD};
+    // Serial2.write(set_tx_power, sizeof(set_tx_power));
+    // clearRfidBuf();
 
     DEBUG_SER_PRINT("Setting RFID Sens-Mode:");
     uint8_t set_sens[] = {0xAA, 0x00, 0xF5, 0x00, 0x01, 0x00, 0xF6, 0xDD};

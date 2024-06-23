@@ -353,6 +353,7 @@ void DTTSRestApi::getGradingKeys(AsyncWebServerRequest *request) {
 
     String json_output;
     serializeJson(doc, json_output);
+    if (json_output == "null") json_output = "{}";
     request->send(request_result, "application/json", json_output);
 }
 

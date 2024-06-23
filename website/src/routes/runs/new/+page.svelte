@@ -25,6 +25,7 @@
 
 	function toggleLengthModal() {
 		showLengthModal = !showLengthModal;
+		fetchGradingKeys();
 	}
 
 	function toggleRunType(type) {
@@ -66,6 +67,9 @@
 			femaleGradingKeys = json.female === undefined ? {} : json.female;
 		} else if (response.status === 401) {
 			window.location.href = '/';
+		} else if (response.status === 404) {
+			maleGradingKeys = {};
+			femaleGradingKeys = {};
 		} else {
 			console.error('Failed to fetch grading keys.');
 		}
@@ -105,12 +109,12 @@
 			message = 'Die Anzahl der Runden muss zwischen 0 und 100 liegen.';
 			return;
 		}
-		if (newRun.class_id === undefined) {
+		if (isNaN(newRun.class_id)) {
 			message = 'Bitte wählen Sie eine Klasse aus.';
 			return;
 		}
-		if (newRun.grading_key_male_id === undefined || newRun.grading_key_female_id === undefined) {
-			message = 'Bitte wählen Sie einen Notenschlüssel für beide Geschlechter aus.';
+		if (isNaN(newRun.grading_key_male_id) || isNaN(newRun.grading_key_female_id)) {
+			message = 'Bitte wählen Sie einen Notenschlüssel für beide Geschlechter aus. Falls keine angezeigt werden, gibt es keine passenden Notenschlüssel.';
 			return;
 		}
 		if (newRun.participants.length === 0) {

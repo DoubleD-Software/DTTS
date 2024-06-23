@@ -222,21 +222,21 @@ void DTTSServer::begin() {
 
     for (String endpoint : htmlEndpoints) {
         String endpointPath = "/website" + endpoint + ".html";
-        server.serveStatic(endpoint.c_str(), SD, endpointPath.c_str()).setCacheControl("max-age=604800");
+        server.serveStatic(endpoint.c_str(), LittleFS, endpointPath.c_str()).setCacheControl("max-age=604800");
     }
 
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(SD, "/website/index.html", "text/html");
+        request->send(LittleFS, "/website/index.html", "text/html");
     });
     server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request) {
         request->redirect("/");
     });
-    server.serveStatic("/_app", SD, "/website/_app").setCacheControl("max-age=2592000");
-    server.serveStatic("/DigitalNumbers-reduced.ttf", SD, "/website/DigitalNumbers-reduced.ttf").setCacheControl("max-age=2592000");
-    server.serveStatic("/manifest.json", SD, "/website/manifest.json").setCacheControl("max-age=2592000");
-    server.serveStatic("/app_icon.webp", SD, "/website/app_icon.webp").setCacheControl("max-age=2592000");
-    server.serveStatic("/favicon.webp", SD, "/website/favicon.webp").setCacheControl("max-age=2592000");
-    server.serveStatic("/dtts.webp", SD, "/website/dtts.webp").setCacheControl("max-age=2592000");
+    server.serveStatic("/_app", LittleFS, "/website/_app").setCacheControl("max-age=2592000");
+    server.serveStatic("/DigitalNumbers-reduced.ttf", LittleFS, "/website/DigitalNumbers-reduced.ttf").setCacheControl("max-age=2592000");
+    server.serveStatic("/manifest.json", LittleFS, "/website/manifest.json").setCacheControl("max-age=2592000");
+    server.serveStatic("/app_icon.webp", LittleFS, "/website/app_icon.webp").setCacheControl("max-age=2592000");
+    server.serveStatic("/favicon.webp", LittleFS, "/website/favicon.webp").setCacheControl("max-age=2592000");
+    server.serveStatic("/dtts.webp", LittleFS, "/website/dtts.webp").setCacheControl("max-age=2592000");
 
     server.addHandler(&ws);
 

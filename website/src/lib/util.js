@@ -2,9 +2,15 @@ export function formatTime(time, runType) {
 	if (runType === 0) {
 		return (time / 1000).toFixed(2).replace('.', ',') + 'sek';
 	} else {
-		const minutes = Math.floor(time / 60000);
+		const hours = Math.floor(time / 3600000);
+		const minutes = Math.floor((time % 3600000) / 60000);
 		const seconds = ((time % 60000) / 1000);
-		return minutes + ':' + (seconds < 10 ? '0' : '') + seconds.toFixed(0) + 'min';
+
+		if (hours > 0) {
+			return hours + ':' + (minutes < 10 ? '0' : '') + minutes + ':' + (seconds.toFixed(0) < 10 ? '0' : '') + seconds.toFixed(0);
+		} else {
+			return minutes + ':' + (seconds.toFixed(0) < 10 ? '0' : '') + seconds.toFixed(0);
+		}
 	}
 }
 

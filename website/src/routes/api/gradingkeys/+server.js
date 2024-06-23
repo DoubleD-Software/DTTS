@@ -4,6 +4,27 @@ import { json } from '@sveltejs/kit';
 export async function GET({ url }) {
 	console.log('GradingKey GET request id: ' + url.searchParams.get('id'));
 	if (url.searchParams.has('type') && url.searchParams.has('length')) {
+		if (url.searchParams.get('length') === '75') {
+			return json(
+				{
+					'female': {
+						'2': '8 Sprint (w)',
+						'3': '9 Sprint (w)'
+					}
+				});
+		}
+		if (url.searchParams.get('length') === '101') {
+			return json(
+				{
+					'male': {
+						'2': '8 Sprint (w)',
+						'3': '9 Sprint (w)'
+					}
+				});
+		}
+		if (url.searchParams.get('length') === '102') {
+			return json({});
+		}
 		return json(
 			{
 				'male': {

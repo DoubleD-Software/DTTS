@@ -6,13 +6,12 @@
 	import AddIcon from '$lib/icons/AddIcon.svelte';
 
 	let selectedDate = new Date();
+	let runs = undefined;
 
 	function handleDateChange(event) {
 		selectedDate = event.detail.date;
 		fetchRuns();
 	}
-
-	let runs = undefined;
 
 	async function fetchRuns() {
 		try {
@@ -25,7 +24,7 @@
 				const data = await response.json();
 				runs = Object.entries(data);
 			} else if (response.status === 404) {
-				runs = {};
+				runs = undefined;
 			} else if (response.status === 401) {
 				window.location.href = '/';
 			} else {
@@ -39,7 +38,7 @@
 
 <DateSelector on:dateChange={handleDateChange} />
 <div class="m-3 text-white">
-	{#if runs === undefined || runs.length === 0}
+	{#if runs === undefined }
 		<p class="text-center text-xl">Keine Läufe an diesem Tag.</p>
 	{:else}
 		{#each runs as [id, run]}
