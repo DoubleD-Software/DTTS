@@ -178,7 +178,7 @@ void Database::createTables() {
         DEBUG_SER_PRINT("Failed to prepare statement: ");
         DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
         sqlite3_finalize(run_stmt);
-        sysHalt(DB_CREATE_FAILED, "Failed to cleanup db.");
+        sysWarn("Failed to cleanup db.");
     }
 
     while (sqlite3_step(run_stmt) == SQLITE_ROW) {
@@ -189,7 +189,7 @@ void Database::createTables() {
             DEBUG_SER_PRINT("Failed to prepare statement: ");
             DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
             sqlite3_finalize(result_stmt);
-            sysHalt(DB_CREATE_FAILED, "Failed to cleanup db.");
+            sysWarn("Failed to cleanup db.");
         }
         if (sqlite3_step(result_stmt) != SQLITE_ROW) {
             DEBUG_SER_PRINTLN("Deleting invalid run: " + String(run_id));
@@ -197,7 +197,7 @@ void Database::createTables() {
             if (sqlite3_exec(this->db, sql.c_str(), 0, 0, 0) != SQLITE_OK) {
                 DEBUG_SER_PRINT("Failed to delete run: ");
                 DEBUG_SER_PRINTLN(sqlite3_errmsg(this->db));
-                sysHalt(DB_CREATE_FAILED, "Failed to cleanup db.");
+                sysWarn("Failed to cleanup db.");
             }
         }
         sqlite3_finalize(result_stmt);
@@ -1676,7 +1676,13 @@ UserAuth Database::checkPassword(String username, String password) {
         sqlite3_finalize(user_stmt);
         return auth;
     }
+
     String stored_password = String((const char*) sqlite3_column_text(user_stmt, 3));
+    if (stored_password != password) {
+        sqlite3_finalize(user_stmt);
+        return auth;
+    }
+
     auth.access_level = sqlite3_column_int(user_stmt, 4);
     auth.user_id = sqlite3_column_int(user_stmt, 0);
     sqlite3_finalize(user_stmt);

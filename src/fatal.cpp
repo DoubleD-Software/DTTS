@@ -18,3 +18,16 @@ void sysHalt(int error_code, const char *msg) {
         delay(1000);
     }
 }
+
+/**
+ * Prints a warning message to the serial output if debug is enabled. Additionally, prints warning message to the OLED display and waits 5 seconds.
+ * @param msg The message to print.
+*/
+void sysWarn(const char *msg) {
+    char oled_str[64] = {0};
+    sprintf(oled_str, "WARNING: %s", msg);
+    oled.clear();
+    oled.print(oled_str, 1, WHITE);
+    DEBUG_SER_PRINTLN(oled_str);
+    delay(5000);
+}

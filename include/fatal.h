@@ -4,5 +4,6 @@
 #include <debug.h>
 
 void sysHalt(int error_code, const char *msg);
+void sysWarn(const char *msg);
 
 #endif

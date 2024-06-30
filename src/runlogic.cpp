@@ -329,6 +329,7 @@ void RunHandler::runSprint() {
     DEBUG_SER_PRINTLN("Sprint run started.");
     run_start_time = millis();
     unsigned long last_ws_send = millis();
+    unsigned long last_time_disp = millis();
 
     int participants_size_before = participants.size();
 
@@ -337,7 +338,10 @@ void RunHandler::runSprint() {
             break;
         }
 
-        calcAndDispTimeSprint();
+        if ((millis() - last_time_disp) > 5) { // Update display every 5ms even thought only 10ms are required, compensating for the time it takes to calculate finisher times
+            last_time_disp = millis();
+            calcAndDispTimeSprint();
+        }
         RfidEpc tag = readRfidTag(false);
         if (tag.tag_valid) {
             for (int i = 0; i < tag_assignments.size(); i++) {
@@ -348,14 +352,15 @@ void RunHandler::runSprint() {
                     finisher.student_name = participants[i].student_name;
                     sprint_finishers.push_back(finisher);
                     tag_assignments.erase(tag_assignments.begin() + i);
+                    String student_name = participants[i].student_name;
                     participants.erase(participants.begin() + i);
 
-                    char time_str[9]; // 00:00:00
-                    snprintf(time_str, 9, "%02d:%02d:%02d", (finisher.time / 1000) / 60, (finisher.time / 1000) % 60, (finisher.time % 1000) / 10);
+                    char time_str[10]; // 00:00:00\n
+                    snprintf(time_str, 10, "%02d:%02d:%02d\n", (finisher.time / 1000) / 60, (finisher.time / 1000) % 60, (finisher.time % 1000) / 10);
 
                     oled->clear();
                     oled->print(time_str, 2);
-                    oled->print(participants[i].student_name.c_str(), 1);
+                    oled->print(student_name.c_str(), 1);
                     break;
                 }
             }
@@ -425,12 +430,17 @@ void RunHandler::runLapRun() {
     DEBUG_SER_PRINTLN("Lap run started.");
     run_start_time = millis();
     unsigned long last_ws_send = millis();
+    unsigned long last_time_disp = millis();
 
     while(true) {
         if (num_lap_run_finishers == participants.size()) {
             break;
         }
 
+        if ((millis() - last_time_disp) > 5) { // Update display every 5ms even thought only 10ms are required, compensating for the time it takes to calculate finisher times
+            last_time_disp = millis();
+            calcAndDispTimeLapRun();
+        }
         calcAndDispTimeLapRun();
         RfidEpc tag = readRfidTag(false);
         if (tag.tag_valid) {
@@ -457,8 +467,8 @@ void RunHandler::runLapRun() {
                         lap_run_finishers[i].total_time = total_time;
                         num_lap_run_finishers++;
 
-                        char time_str[9]; // 00:00:00
-                        snprintf(time_str, 9, "%02d:%02d:%02d", (total_time / 1000) / 3600, (total_time / 1000) / 60, (total_time / 1000) % 60);
+                        char time_str[10]; // 00:00:00\n
+                        snprintf(time_str, 10, "%02d:%02d:%02d\n", (total_time / 1000) / 3600, (total_time / 1000) / 60, (total_time / 1000) % 60);
 
                         oled->clear();
                         oled->print(time_str, 2);
