@@ -845,7 +845,7 @@ void DTTSRestApi::authenticate(AsyncWebServerRequest *request, String data) {
         request_result = 400;
     } else {
         if (doc.containsKey("username") && doc.containsKey("password") && doc.containsKey("date")) {
-            current_date = doc["date"];
+            this->current_date = doc["date"];
             String username = doc["username"];
             String password = doc["password"];
 

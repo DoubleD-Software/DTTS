@@ -5,7 +5,6 @@
 #include <ArduinoJson.h>
 #include <ESPAsyncWebServer.h>
 #include <database.h>
-#include <globals.h>
 #include <runlogic.h>
 
 #define ACCESS_USER 0
@@ -49,6 +48,7 @@ class DTTSRestApi {
         bool user_logged_in = false;
         int logged_in_user_id;
         int access_level = ACCESS_USER;
+        int current_date = 0;
 
         int checkAuth(AsyncWebServerRequest *request);
 };

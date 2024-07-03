@@ -2,8 +2,8 @@
 #include <LittleFS.h>
 #include <definitions.h>
 #include <debug.h>
-#include <fatal.h>
 #include <oled.h>
+#include <fatal.h>
 #include <tm1637.h>
 #include <main.h>
 #include <SD.h>
